@@ -1,0 +1,3557 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
+      @font-face {
+        font-family: "Roboto";
+        src: url("./fonts/Roboto-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Roboto";
+        src: url("./fonts/Roboto-Medium.ttf") format("truetype");
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Roboto";
+        src: url("./fonts/Roboto-Bold.ttf") format("truetype");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      /* (Optional italics) */
+      @font-face {
+        font-family: "Roboto";
+        src: url("./fonts/Roboto-Italic.ttf") format("truetype");
+        font-weight: 400;
+        font-style: italic;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Roboto";
+        src: url("./fonts/Roboto-MediumItalic.ttf") format("truetype");
+        font-weight: 500;
+        font-style: italic;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Roboto";
+        src: url("./fonts/Roboto-BoldItalic.ttf") format("truetype");
+        font-weight: 700;
+        font-style: italic;
+        font-display: swap;
+      }
+
+      .avoid-break {
+        /* modern */
+        break-inside: avoid-page;
+        /* legacy / extra help for Chromium */
+        page-break-inside: avoid;
+        -webkit-column-break-inside: avoid;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: "Roboto", "Calibri", sans-serif;
+        background-color: white;
+      }
+
+      #first-wrapper {
+        display: flex;
+        flex-direction: column;
+        width: 210mm;
+        height: 297mm;
+        background-color: white;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+        /* so absolutely positioned kids are clipped */
+        overflow: hidden;
+        /* Tailwind's overflow-hidden */
+      }
+
+      #first-wrapper > img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        /* removes inline-gap */
+        object-fit: cover;
+        /* fill and crop nicely */
+      }
+
+      /* A4 fixed-size wrapper */
+      #page-wrapper {
+        width: 210mm;
+        height: 297mm;
+        display: flex;
+        flex-direction: column;
+        padding: 12mm;
+        /* Adjust margins inside the page */
+
+        background-color: white;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      #service-wrapper {
+        width: 210mm;
+        display: flex;
+        flex-direction: column;
+        padding: 12mm;
+        /* Adjust margins inside the page */
+        background-color: white;
+        box-sizing: border-box;
+        margin-left: auto;
+        margin-right: auto;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+
+      .service-section {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+
+      #last-item {
+        margin-top: auto;
+        /* Push to bottom */
+      }
+
+      .section {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+      }
+
+      li {
+        counter-increment: item;
+        position: relative;
+      }
+
+      /* Reset base styles */
+      ol {
+        list-style: none;
+        margin: 0;
+        padding-left: 1.2rem;
+      }
+
+      /* --- LEVEL 1: Decimal --- */
+      ol.level-1 {
+        counter-reset: lvl1;
+      }
+
+      ol.level-1 > li {
+        counter-increment: lvl1;
+        font-style: italic;
+        padding-top: 2px;
+      }
+
+      ol.level-1 > li::before {
+        content: counter(lvl1) ".";
+        position: absolute;
+        left: -2.5em;
+        width: 1em;
+        text-align: left;
+        font-weight: bold;
+      }
+
+      /* --- LEVEL 2: Decimal with prefix (1.1, 1.2) --- */
+      ol.level-2 {
+        counter-reset: lvl2;
+      }
+
+      ol.level-2 > li {
+        counter-increment: lvl2;
+        font-style: normal;
+        padding-top: 2px;
+      }
+
+      ol.level-2 > li::before {
+        content: counter(lvl1) "." counter(lvl2);
+        position: absolute;
+        left: -2.5em;
+        width: 1em;
+        text-align: left;
+        font-weight: normal;
+      }
+
+      /* --- LEVEL 3: Lower alpha (a, b, c) --- */
+      ol.level-3 {
+        counter-reset: lvl3;
+      }
+
+      ol.level-3 > li {
+        counter-increment: lvl3;
+        font-style: normal;
+        padding-top: 2px;
+      }
+
+      ol.level-3 > li::before {
+        content: "(" counter(lvl3, lower-alpha) ")";
+        position: absolute;
+        left: -2.5em;
+        width: 1em;
+        text-align: left;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="first-wrapper" style="position: relative">
+      <img
+        src="images/img-000.jpg"
+        alt="cover"
+        width="100%"
+        style="margin-right: auto; margin-left: auto"
+      />
+      <div
+        style="
+          position: absolute;
+          color: white;
+          right: 14px;
+          top: 40%;
+          text-align: right;
+        "
+      >
+        <div style="font-size: 32px"><b>Service Agreement</b></div>
+        <div style="font-size: 14px">{SITE_NAME}</div>
+      </div>
+    </div>
+    <div id="page-wrapper" style="page-break-before: always; font-size: 13px">
+      <div
+        class="section"
+        style="display: flex; flex-direction: row; gap: 20px"
+      >
+        <img
+          src="images/header-image.svg"
+          alt="Header Image"
+          style="width: 210px; height: auto"
+        />
+        <div>
+          <div style="text-align: right"><b>ABN:</b> 33 611 438 576</div>
+          <div style="margin-top: 2px; text-align: right">
+            <b>ELEPHANTS FOOT SERVICE & CARE. PTY LTD</b>
+          </div>
+          <div style="margin-top: 2px; text-align: right">
+            1300 435 374 | service@elephantsfoot.com.au
+          </div>
+          <div
+            style="
+              margin-top: 2px;
+              text-align: right;
+
+              color: #fcbd2a;
+            "
+          >
+            <b>www.elephantsfoot.com.au</b>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+          margin-top: 40px;
+        "
+      >
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 30px;
+            padding-top: 5px;
+            text-align: center;
+          "
+        >
+          <b>TERM</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+            text-align: center;
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>MEANING</b>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>We, Us or Our</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+            min-height: 22px;
+            padding-top: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 10px;
+          "
+        >
+          <div><b>ELEPHANTS FOOT SERVICE & CARE PTY LTD</b></div>
+          <div><b>ABN 33 611 438 576</b></div>
+          <div>Address: 112-116 Canterbury Road Bankstown NSW 2200</div>
+          <div>Phone: 1300 4 ELEPHANT (1300 435 374)</div>
+          <div>Email: service@elephantsfoot.com.au</div>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>You or Your</b>
+        </div>
+        <div style="width: 81.5%">
+          <div
+            style="
+              border-bottom: solid 1px black;
+              min-height: 22px;
+              padding-left: 10px;
+              padding-top: 5px;
+            "
+          >
+            Company Name:
+          </div>
+          <div
+            style="
+              border-bottom: solid 1px black;
+              min-height: 22px;
+              padding-left: 10px;
+              padding-top: 5px;
+            "
+          >
+            ABN:
+          </div>
+          <div
+            style="
+              border-bottom: solid 1px black;
+              min-height: 22px;
+              padding-left: 10px;
+              padding-top: 5px;
+            "
+          >
+            Address:
+          </div>
+          <div
+            style="
+              border-bottom: solid 1px black;
+              min-height: 22px;
+              padding-left: 10px;
+              padding-top: 5px;
+            "
+          >
+            Accounts Emails:
+          </div>
+          <div style="padding-left: 10px; min-height: 22px; padding-top: 5px">
+            Account Name and Phone:
+          </div>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Start Date</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>End Date</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Total Contract Value</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Salesperson</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Price</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            padding-bottom: 10px;
+          "
+        >
+          The Price is calculated based on a schedule of rates (as attached to
+          this Agreement) or as otherwise agreed between the Parties.
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Payment Terms</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 10px;
+          "
+        >
+          <div>
+            Where the Goods and Services are provided on a fixed fee basis, we
+            may issue invoices to you on completion of the Goods and Services
+            (as determined by us). Where a deposit is required, we may issue an
+            invoice to you on or before the Start Date.
+          </div>
+          <div>OR</div>
+          <div>
+            We may issue invoices to you on a [weekly / monthly / fortnightly]
+            basis for Services performed during that period.
+          </div>
+
+          <div>
+            You must pay the amount in the invoice, using the payment method set
+            out in the invoice, within [30 days] of the date of the invoice, or
+            as otherwise agreed between the Parties.
+          </div>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>State</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 20%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Expiry</b>
+        </div>
+        <div
+          style="
+            width: 80%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          30 days from issue date
+        </div>
+      </div>
+      <div
+        class="section"
+        style="margin-top: auto; display: flex; flex-direction: row; gap: 20px"
+      >
+        <img
+          src="images/footer-image.svg"
+          alt="Header Image"
+          style="width: 170px; height: auto"
+        />
+        <div>
+          <div style="color: #1e60ad"><b>New South Wales</b></div>
+          <div style="margin-top: 2px">
+            112-116 Canterbury Road <br />
+            Bankstown NSW 2200
+          </div>
+        </div>
+        <div>
+          <div style="color: #1e60ad"><b>Queensland</b></div>
+          <div style="margin-top: 2px">
+            19 Westerway Street <br />
+            Slacks Creek QLD 4127
+          </div>
+        </div>
+        <div>
+          <div style="color: #1e60ad"><b>Victoria</b></div>
+          <div style="margin-top: 2px">
+            34 Drake Boulevard <br />
+            Altona VIC 3018
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      id="service-wrapper"
+      style="page-break-before: always; font-size: 13px"
+    >
+      <div class="section">
+        <img
+          src="images/header-image.svg"
+          alt="Header Image"
+          style="width: 210px; height: auto"
+        />
+      </div>
+      <div class="section" style="margin-top: 40px">
+        <div>
+          <u><b>SCHEDULE OF SERVICES:</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 30%;
+            text-align: center;
+            border-right: 1px solid black;
+            min-height: 45px;
+            padding-top: 5px;
+          "
+        >
+          <b>SERVICE TYPE</b>
+        </div>
+        <div
+          style="
+            width: 15%;
+            text-align: center;
+            border-right: 1px solid black;
+            min-height: 45px;
+            padding-top: 5px;
+          "
+        >
+          <b>RECOMMENDED FREQUENCY </b>
+        </div>
+        <div
+          style="
+            width: 35%;
+            text-align: center;
+            min-height: 45px;
+            padding-top: 5px;
+            border-right: 1px solid black;
+          "
+        >
+          <b>COST</b>
+        </div>
+        <div
+          style="
+            width: 20%;
+            text-align: center;
+            min-height: 45px;
+            padding-top: 5px;
+          "
+        >
+          <b>Select</b>
+        </div>
+      </div>
+      {SERVICE-CONTENT}
+      <div class="section">
+        <ul
+          style="
+            padding-left: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+          "
+        >
+          <li>
+            Services will be invoiced upon completion of works carried out.
+          </li>
+          <li>Quarterly odour control invoiced in advance.</li>
+          <li>
+            <b
+              >Chute cleaning and waste pressure room cleaning to be scheduled
+              together.</b
+            >
+          </li>
+          <li>
+            Additional charges will apply if access keys are required to be
+            picked up and any paid parking.
+          </li>
+          <li>
+            Waste room pressure clean – rooms larger than 20m² will incur
+            additional charges.
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div id="page-wrapper" style="page-break-before: always; font-size: 13px">
+      <div class="section">
+        <img
+          src="images/header-image.svg"
+          alt="Header Image"
+          style="width: 210px; height: auto"
+        />
+      </div>
+      <div class="section" style="margin-top: 40px">
+        <div>
+          <u><b>WASTE ROOM CLEANING AREA M² RATES</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Area Size m²</b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>SERVICE AGREEMENT</b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>ADHOC SERVICE</b>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>0m² – 20m²</b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          $425.00 + GST
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          $490.00 + GST
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>21m² – 40m²</b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          $490.00 + GST
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          $590.00 + GST
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>41m² – 60m²</b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          $590.00 + GST
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          $690.00 + GST
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>61m² – 80m²</b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          $650.00 + GST
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          $750.00 + GST
+        </div>
+      </div>
+      <div class="section" style="margin-top: 20px">
+        <div>
+          <u><b>UNSCHEDULED SERVICE RATES:</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>PERIOD</b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>CALL OUT FEE</b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          HOURLY RATE
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 45px;
+            padding-top: 5px;
+          "
+        >
+          <b>
+            <div>Normal Working Hours</div>
+            <div style="margin-top: 10px">(8.30am – 4.30pm)</div>
+          </b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 45px;
+            padding-top: 5px;
+          "
+        >
+          $160.00 + GST
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 45px;
+            padding-top: 5px;
+          "
+        >
+          $125.00 + GST
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 60px;
+            padding-top: 5px;
+          "
+        >
+          <b>
+            <div>After Hours</div>
+            <div style="margin-top: 10px">
+              (Monday to Friday from 4:30pm and Saturday)
+            </div>
+          </b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 60px;
+            padding-top: 5px;
+          "
+        >
+          <div>$640.00 + GST*</div>
+          <div style="margin-top: 10px">(3 hours including travel)</div>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 60px;
+            padding-top: 5px;
+          "
+        >
+          <div>$175.00 + GST</div>
+          <div style="margin-top: 10px">(Any time thereafter)</div>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 50px;
+            padding-top: 5px;
+          "
+        >
+          <b>
+            <div>After Hours</div>
+            <div style="margin-top: 10px">(Sunday and Public Holidays)</div>
+          </b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 50px;
+            padding-top: 5px;
+          "
+        >
+          $720.00 + GST*
+          <div style="margin-top: 10px">(3 hours including travel)</div>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 50px;
+            padding-top: 5px;
+          "
+        >
+          $195.00 + GST
+          <div style="margin-top: 10px">(Any time thereafter)</div>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 60px;
+            padding-top: 5px;
+          "
+        >
+          <b>
+            <div>Waste Blockage</div>
+            <div style="margin-top: 10px">
+              (Normal Working Hours 8.30am – <br />4.30pm)
+            </div>
+          </b>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            border-right: 1px solid black;
+            height: 60px;
+            padding-top: 5px;
+          "
+        >
+          $380.00 + GST*
+          <div style="margin-top: 10px">(3 hours including travel)</div>
+        </div>
+        <div
+          style="
+            width: 33.33%;
+            text-align: center;
+            height: 60px;
+            padding-top: 5px;
+          "
+        >
+          $125.00 + GST*
+          <div style="margin-top: 10px">(Any time thereafter)</div>
+        </div>
+      </div>
+      <div class="section" style="margin-top: 5px">
+        <div>
+          *Unscheduled Service Prices are not included in this agreement.
+        </div>
+      </div>
+    </div>
+
+    <div id="page-wrapper" style="page-break-before: always; font-size: 13px">
+      <div class="section">
+        <img
+          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MTkgMTYxIj48cGF0aCBkPSJNNzAuMSw2My42aDBWNjAuN0gxNy40YzAsLjQuMS43LjEsMS4xYTMyLjYsMzIuNiwwLDAsMCwyLjMsNy41LDI4LjYsMjguNiwwLDAsMCw3LDkuNSwyNC45LDI0LjksMCwwLDAsMTEuOCw1LjksMTguOCwxOC44LDAsMCwwLDMuMy41aDEuOXY5LjNoLS4zYTMyLjgsMzIuOCwwLDAsMS0yMC42LTcuM0EzNy4xLDM3LjEsMCwwLDEsMTAuNCw2OS40YTMxLjcsMzEuNywwLDAsMS0xLjYtNi42LDM2LjIsMzYuMiwwLDAsMS0uNC03LjMsMzUuNywzNS43LDAsMCwxLC40LTQuNiwzNy4yLDM3LjIsMCwwLDEsMy4zLTExLjEsMzguNSwzOC41LDAsMCwxLDcuOC0xMS4xLDM4LjMsMzguMywwLDAsMSwxMS4yLTcuNCwzMy42LDMzLjYsMCwwLDEsMjUuNS4xLDM0LjQsMzQuNCwwLDAsMSwxMS4yLDcuNSwzNy45LDM3LjksMCwwLDEsNi40LDguNWMwLC4xLjEuMS4xLjJoLjFhLjMuMywwLDAsMSwuMS0uMiwzNi43LDM2LjcsMCwwLDEsOS42LTExLjgsMzQuMiwzNC4yLDAsMCwxLDktNS40bDEuNi0uNlYxNi4yQTE2LjEsMTYuMSwwLDAsMCw3OC42LDBIMTYuMkExNi4xLDE2LjEsMCwwLDAsMCwxNi4yVjk3LjZhMTYuMSwxNi4xLDAsMCwwLDE2LjIsMTYuMkg3MGMwLTE2LjcsMC0zMy40LjEtNTAuMiIgc3R5bGU9ImZpbGw6I2ZkYzQwMSIvPjxwYXRoIGQ9Ik03OS4yLDUwLjd2LjJIOTQuN1YyOS42QTMxLDMxLDAsMCwwLDg4LjIsMzRhMjksMjksMCwwLDAtOSwxNi43IiBzdHlsZT0iZmlsbDojZmRjNDAxIi8+PHBhdGggZD0iTTU0LjksMzAuOEEyNiwyNiwwLDAsMCw0NSwyOC4yYTI5LjEsMjkuMSwwLDAsMC01LjEuMywxOC45LDE4LjksMCwwLDAtNC44LDEuMywyNS45LDI1LjksMCwwLDAtMTEsNy43LDI4LjcsMjguNywwLDAsMC02LjIsMTIuM2wtLjMsMS4xSDY5LjlsLS4zLTEuMWEyOS41LDI5LjUsMCwwLDAtNy0xMy4zLDI5LjEsMjkuMSwwLDAsMC03LjctNS43IiBzdHlsZT0iZmlsbDojZmRjNDAxIi8+PHBhdGggZD0iTTc5LjYsNjAuNmgtLjR2LjJoMHY1M0ExNi4xLDE2LjEsMCwwLDAsOTQuNyw5Ny42di0zN0g3OS42IiBzdHlsZT0iZmlsbDojZmRjNDAxIi8+PHBhdGggZD0iTTcwLDExMy44VjE2MWg5LjFWMTEzLjhINzBNMTcuNiw1MC45bC4zLTEuMWEyOC43LDI4LjcsMCwwLDEsNi4yLTEyLjMsMjUuOSwyNS45LDAsMCwxLDExLTcuNywxOC45LDE4LjksMCwwLDEsNC44LTEuMywyOS4xLDI5LjEsMCwwLDEsNS4xLS4zLDI2LDI2LDAsMCwxLDkuOSwyLjYsMjkuMSwyOS4xLDAsMCwxLDcuNyw1LjcsMjkuNSwyOS41LDAsMCwxLDcsMTMuM2wuMywxLjFaIiBzdHlsZT0iZmlsbDojZmRjNDAxIi8+PHBvbHlnb24gcG9pbnRzPSIxMjUuMyAzLjYgMTI1LjMgMTUuMiAxNDEuMyAxNS4yIDE0MS4zIDE4LjQgMTI1LjMgMTguNCAxMjUuMyAzMSAxNDIgMzEgMTQyIDM0LjMgMTIxLjkgMzQuMyAxMjEuOSAwLjIgMTQyIDAuMiAxNDIgMy42IDEyNS4zIDMuNiIgc3R5bGU9ImZpbGw6IzFiMjY0MCIvPjxwb2x5Z29uIHBvaW50cz0iMTU2LjcgMC4yIDE1Ni43IDMwLjcgMTcyLjYgMzAuNyAxNzIuNiAzNC4zIDE1Mi45IDM0LjMgMTUyLjkgMC4yIDE1Ni43IDAuMiIgc3R5bGU9ImZpbGw6IzFiMjY0MCIvPjxwb2x5Z29uIHBvaW50cz0iMTg2LjcgMy42IDE4Ni43IDE1LjIgMjAyLjcgMTUuMiAyMDIuNyAxOC40IDE4Ni43IDE4LjQgMTg2LjcgMzEgMjAzLjQgMzEgMjAzLjQgMzQuMyAxODMuMyAzNC4zIDE4My4zIDAuMiAyMDMuNCAwLjIgMjAzLjQgMy42IDE4Ni43IDMuNiIgc3R5bGU9ImZpbGw6IzFiMjY0MCIvPjxwYXRoIGQ9Ik0yMTQuMSwzNC4zVi4yaDE0LjdhMTguMywxOC4zLDAsMCwxLDMuNS4zQTUuOSw1LjksMCwwLDEsMjM1LDEuOWE3LjQsNy40LDAsMCwxLDIsMy44LDI1LjksMjUuOSwwLDAsMSwuNSw1LjEsMjAuMywyMC4zLDAsMCwxLS40LDQuNSw2LjksNi45LDAsMCwxLTEuNiwzLjIsNi4yLDYuMiwwLDAsMS0xLjksMS40LDUuOCw1LjgsMCwwLDEtMi4xLjdsLTMsLjJIMjE3LjZWMzQuM1ptMy41LTE2LjZoOC4zYTI1LjEsMjUuMSwwLDAsMCw0LjgtLjQsMy42LDMuNiwwLDAsMCwyLjQtMS45LDEwLjcsMTAuNywwLDAsMCwuOC00LjcsMTUuMywxNS4zLDAsMCwwLS40LTQuMSwzLjYsMy42LDAsMCwwLTEuNC0yLjMsNi40LDYuNCwwLDAsMC0zLjQtLjdIMjE3LjZaIiBzdHlsZT0iZmlsbDojMWIyNjQwIi8+PHBvbHlnb24gcG9pbnRzPSIyNzMuNCAwLjIgMjczLjQgMzQuMyAyNjkuOCAzNC4zIDI2OS44IDE4LjUgMjUxLjUgMTguNSAyNTEuNSAzNC4zIDI0OCAzNC4zIDI0OCAwLjIgMjUxLjUgMC4yIDI1MS41IDE1LjIgMjY5LjggMTUuMiAyNjkuOCAwLjIgMjczLjQgMC4yIiBzdHlsZT0iZmlsbDojMWIyNjQwIi8+PHBhdGggZD0iTTMwNi41LDI3SDI5MC43bC0yLjMsNy4zaC0zLjhMMjk2LjEuMmg1bDExLjYsMzQuMUgzMDlabS0uOS0zLjFMMjk4LjYsM2wtNi45LDIwLjlaIiBzdHlsZT0iZmlsbDojMWIyNjQwIi8+PHBvbHlnb24gcG9pbnRzPSIzNTAuMyAwLjIgMzUwLjMgMzQuMyAzNDQuNiAzNC4zIDMyNyAzLjUgMzI3IDM0LjMgMzIzLjYgMzQuMyAzMjMuNiAwLjIgMzI5LjMgMC4yIDM0Ni45IDMxLjQgMzQ2LjkgMC4yIDM1MC4zIDAuMiIgc3R5bGU9ImZpbGw6IzFiMjY0MCIvPjxwb2x5Z29uIHBvaW50cz0iMzc0LjcgMy44IDM3NC43IDM0LjMgMzcxLjEgMzQuMyAzNzEuMSAzLjggMzYxIDMuOCAzNjEgMC4yIDM4NC43IDAuMiAzODQuNyAzLjggMzc0LjcgMy44IiBzdHlsZT0iZmlsbDojMWIyNjQwIi8+PHBhdGggZD0iTTQxOC40LDkuNkg0MTVhMTYuMSwxNi4xLDAsMCwwLS42LTQsMywzLDAsMCwwLTEuNy0xLjgsOC45LDguOSwwLDAsMC0zLjctLjZoLTEuOGMtMy4yLDAtNS4zLjQtNi40LDEuMXMtMS42LDIuMy0xLjYsNC43YTE0LjIsMTQuMiwwLDAsMCwuMywzLjMsMy4yLDMuMiwwLDAsMCwxLjQsMS44LDUuNiw1LjYsMCwwLDAsMi45LjhsNC42LjJhMjYuMSwyNi4xLDAsMCwxLDYuMy44LDYsNiwwLDAsMSwzLjEsMi42LDExLjQsMTEuNCwwLDAsMSwxLjIsNS44LDIzLjUsMjMuNSwwLDAsMS0uNCw1LDUuOSw1LjksMCwwLDEtMS44LDMuMyw2LjcsNi43LDAsMCwxLTQuMSwxLjYsNTIuMSw1Mi4xLDAsMCwxLTYsLjMsMzAsMzAsMCwwLDEtNC43LS4zLDkuMiw5LjIsMCwwLDEtMy40LTEuMiw1LjQsNS40LDAsMCwxLTIuMy0yLjgsMTEuNCwxMS40LDAsMCwxLS44LTQuOVYyMy43aDMuNGExNy41LDE3LjUsMCwwLDAsLjUsNC43LDMuMywzLjMsMCwwLDAsMS45LDIuMSwxMS42LDExLjYsMCwwLDAsNC4zLjZoM2ExNC43LDE0LjcsMCwwLDAsNC4yLS40LDIuOCwyLjgsMCwwLDAsMi4xLTEuNywxMS4yLDExLjIsMCwwLDAsLjYtNC4zLDEwLjEsMTAuMSwwLDAsMC0uNC0zLjUsMi40LDIuNCwwLDAsMC0xLjQtMS43LDYsNiwwLDAsMC0zLjEtLjZsLTUuOC0uM2ExNS44LDE1LjgsMCwwLDEtNC44LS45LDYuNiw2LjYsMCwwLDEtMy4yLTIuOCwxMSwxMSwwLDAsMS0xLjItNS43LDExLjUsMTEuNSwwLDAsMSwxLjMtNS45QTYuMiw2LjIsMCwwLDEsNDAwLjUuNmEyMy44LDIzLjgsMCwwLDEsNS45LS42aC44bDQuOC4yYTExLjMsMTEuMywwLDAsMSwzLjQsMS4xQTYsNiwwLDAsMSw0MTcuNiw0YTExLjksMTEuOSwwLDAsMSwuOCw1WiIgc3R5bGU9ImZpbGw6IzFiMjY0MCIvPjxwYXRoIGQ9Ik0yNjMuOCw3OC44YzAsMjMuMy0xNC4yLDM2LjQtMzkuNSwzNi40LTExLjgsMC0yMC42LTIuNS0yNy4yLTcuN1MxODUsOTEuNiwxODUsODAuMWMwLTIyLjIsMTUuMi0zNS41LDQwLjUtMzUuNSwyMy40LDAsMzguMywxMy4yLDM4LjMsMzQuMm0tNTguOC40YzAsMTMuNiw3LjksMjIuOCwxOS42LDIyLjhzMTkuMi04LjMsMTkuMi0yMS45UzIzNi43LDU4LDIyNC41LDU4LDIwNSw2NiwyMDUsNzkuMiIgc3R5bGU9ImZpbGw6IzFiMjY0MCIvPjxwYXRoIGQ9Ik0zNDkuOSw3OC44YzAsMjMuMy0xNC4yLDM2LjQtMzkuNSwzNi40LTExLjgsMC0yMC42LTIuNS0yNy4xLTcuN3MtMTIuMi0xNS45LTEyLjItMjcuNGMwLTIyLjIsMTUuMi0zNS41LDQwLjUtMzUuNSwyMy41LDAsMzguMywxMy4yLDM4LjMsMzQuMm0tNTguOC40YzAsMTMuNiw3LjksMjIuOCwxOS42LDIyLjhzMTkuMi04LjMsMTkuMi0yMS45UzMyMi44LDU4LDMxMC42LDU4cy0xOS41LDgtMTkuNSwyMS4yIiBzdHlsZT0iZmlsbDojMWIyNjQwIi8+PHBhdGggZD0iTTQxOC4zLDQ2SDM1My41VjYwLjhoMjMuN3Y1My4zaDE3LjV2LS4zaDB2LTUxaDB2LTJoMjMuNloiIHN0eWxlPSJmaWxsOiMxYjI2NDAiLz48cGF0aCBkPSJNMTM5LjEsNjAuNGg0MS41VjQ2aC01OVY1Ny44aDB2NTYuM2gxNy41Vjg0LjNoMzUuNVY2OS45SDEzOS4xWiIgc3R5bGU9ImZpbGw6IzFiMjY0MCIvPjxwYXRoIGQ9Ik0xMjUsMTQxYTMuNSwzLjUsMCwwLDAsLjgsMi40LDQuOCw0LjgsMCwwLDAsMiwxLjRsMi44LjgsMy4xLjhhMTAuMiwxMC4yLDAsMCwxLDIuOCwxLjEsNC43LDQuNywwLDAsMSwyLjEsMi4xLDYuOCw2LjgsMCwwLDEsLjgsMy40LDcuMSw3LjEsMCwwLDEtMi40LDUuM2MtMS41LDEuNi0zLjcsMi4zLTYuNCwyLjNhMTEuMSwxMS4xLDAsMCwxLTYuNS0xLjgsNS45LDUuOSwwLDAsMS0yLjUtNWgzLjdhNC40LDQuNCwwLDAsMCwxLjQsMi45LDUuOSw1LjksMCwwLDAsMy44LDEuMSw2LjIsNi4yLDAsMCwwLDQtMS4zLDQuMiw0LjIsMCwwLDAsLjctNS43LDMuOSwzLjksMCwwLDAtMi4xLTEuNCwxNS44LDE1LjgsMCwwLDAtMi44LS44bC0zLjEtLjhhMTMuOSwxMy45LDAsMCwxLTIuOC0xLjIsNC41LDQuNSwwLDAsMS0yLTIuMSw3LjQsNy40LDAsMCwxLDEuNi04LjgsOC45LDguOSwwLDAsMSw2LjItMiw5LjYsOS42LDAsMCwxLDYuMSwxLjcsNi44LDYuOCwwLDAsMSwyLjYsNC45SDEzNWEzLjYsMy42LDAsMCwwLTEuNC0yLjYsNi40LDYuNCwwLDAsMC03LjIsMEEzLjcsMy43LDAsMCwwLDEyNSwxNDEiIHN0eWxlPSJmaWxsOiNmZGM0MDEiLz48cGF0aCBkPSJNMTUyLjYsMTYwLjdhOS44LDkuOCwwLDAsMS03LjQtMywxMS4zLDExLjMsMCwwLDEtMi44LTcuOCwxMSwxMSwwLDAsMSwyLjktNy45LDEwLjEsMTAuMSwwLDAsMSw3LjQtMi45LDkuNiw5LjYsMCwwLDEsNy4zLDIuOCw5LjMsOS4zLDAsMCwxLDIuOCw3LjEsMTIuNSwxMi41LDAsMCwxLS4yLDIuMUgxNDZhNyw3LDAsMCwwLDEuOSw0LjksNi40LDYuNCwwLDAsMCw0LjcsMS44LDYuOSw2LjksMCwwLDAsMy42LS45LDUuNyw1LjcsMCwwLDAsMi4xLTIuNWgzLjhhOS42LDkuNiwwLDAsMS0zLjUsNC41LDkuNyw5LjcsMCwwLDEtNiwxLjhtNC42LTE3YTYuMiw2LjIsMCwwLDAtNC42LTEuOCw2LjMsNi4zLDAsMCwwLTQuNiwxLjgsNy4xLDcuMSwwLDAsMC0yLDQuOWgxMy4yYTcsNywwLDAsMC0yLTQuOSIgc3R5bGU9ImZpbGw6I2ZkYzQwMSIvPjxwYXRoIGQ9Ik0xNjkuOCwxMzkuNFYxNDNhNi41LDYuNSwwLDAsMSw2LjQtMy45djMuNmgtLjlhNS42LDUuNiwwLDAsMC00LjEsMS40Yy0uOS45LTEuNCwyLjUtMS40LDQuOHYxMS41aC0zLjV2LTIxWiIgc3R5bGU9ImZpbGw6I2ZkYzQwMSIvPjxwb2x5Z29uIHBvaW50cz0iMTc3LjIgMTM5LjQgMTgwLjkgMTM5LjQgMTg3LjMgMTU3LjEgMTkzLjggMTM5LjQgMTk3LjUgMTM5LjQgMTg5LjMgMTYwLjQgMTg1LjQgMTYwLjQgMTc3LjIgMTM5LjQiIHN0eWxlPSJmaWxsOiNmZGM0MDEiLz48cGF0aCBkPSJNMjAzLjUsMTM1LjRhMi40LDIuNCwwLDAsMS0zLjQsMCwyLjUsMi41LDAsMCwxLS42LTEuNywyLjIsMi4yLDAsMCwxLC43LTEuNywyLjQsMi40LDAsMCwxLDEuNi0uNywyLjQsMi40LDAsMCwxLDEuNyw0LjFtLTMuNSw0aDMuNXYyMUgyMDBaIiBzdHlsZT0iZmlsbDojZmRjNDAxIi8+PHBhdGggZD0iTTIwOS45LDE1Ny43YTEwLjgsMTAuOCwwLDAsMS0yLjgtNy44YzAtMy4zLjktNS45LDIuOC03LjhhOS42LDkuNiwwLDAsMSw3LjQtMywxMC41LDEwLjUsMCwwLDEsNi4xLDEuNyw5LjIsOS4yLDAsMCwxLDMuMyw1SDIyM2E1LjQsNS40LDAsMCwwLTIuMS0yLjgsNi4xLDYuMSwwLDAsMC0zLjYtMS4xLDYsNiwwLDAsMC00LjgsMi4xLDEwLjYsMTAuNiwwLDAsMCwwLDExLjgsNi4zLDYuMywwLDAsMCw0LjgsMmMyLjksMCw0LjgtMS4zLDUuNy0zLjhoMy43YTkuNCw5LjQsMCwwLDEtMy4zLDQuOSwxMCwxMCwwLDAsMS02LjEsMS44LDkuNiw5LjYsMCwwLDEtNy40LTMiIHN0eWxlPSJmaWxsOiNmZGM0MDEiLz48cGF0aCBkPSJNMjM5LjQsMTYwLjdhOS40LDkuNCwwLDAsMS03LjMtMywxMi4xLDEyLjEsMCwwLDEsMC0xNS43LDEwLjEsMTAuMSwwLDAsMSw3LjQtMi45LDkuNiw5LjYsMCwwLDEsNy4zLDIuOCw5LjMsOS4zLDAsMCwxLDIuOCw3LjEsMTIuNSwxMi41LDAsMCwxLS4yLDIuMUgyMzIuOGE3LDcsMCwwLDAsMS45LDQuOSw2LjQsNi40LDAsMCwwLDQuNywxLjgsNi45LDYuOSwwLDAsMCwzLjYtLjksNS4xLDUuMSwwLDAsMCwyLjEtMi41aDMuOGExMCwxMCwwLDAsMS0zLjQsNC41LDEwLjIsMTAuMiwwLDAsMS02LjEsMS44bTQuNy0xN2E2LjYsNi42LDAsMCwwLTQuNy0xLjgsNi41LDYuNSwwLDAsMC00LjYsMS44LDcuMSw3LjEsMCwwLDAtMiw0LjlIMjQ2YTcuNCw3LjQsMCwwLDAtMS45LTQuOSIgc3R5bGU9ImZpbGw6I2ZkYzQwMSIvPjxwYXRoIGQ9Ik0yNzEuMywxNDYuNEgyODB2My4xaC0xLjlhNi40LDYuNCwwLDAsMSwuNCwyLjQsOS44LDkuOCwwLDAsMS0uNywzLjMsOCw4LDAsMCwxLTIsMi44LDguNiw4LjYsMCwwLDEtNi4zLDIuNiw5LjgsOS44LDAsMCwxLTMuNC0uNyw5LjEsOS4xLDAsMCwxLTIuOS0xLjksNy43LDcuNywwLDAsMS0xLjktMi44LDcuOCw3LjgsMCwwLDEtLjctMy4zLDguMyw4LjMsMCwwLDEsMS00LjEsOS4yLDkuMiwwLDAsMSwyLjgtMy4xLDYuOCw2LjgsMCwwLDEtMS43LTIuMSw2LjcsNi43LDAsMCwxLS42LTIuOCw1LjIsNS4yLDAsMCwxLC41LTIuNCw2LDYsMCwwLDEsMS40LTIuMSw3LjQsNy40LDAsMCwxLDIuMS0xLjMsNS4zLDUuMywwLDAsMSwyLjUtLjUsNS4xLDUuMSwwLDAsMSwyLjUuNSw3LjQsNy40LDAsMCwxLDIuMSwxLjMsNiw2LDAsMCwxLDEuNCwyLjEsNS4zLDUuMywwLDAsMSwuNiwyLjRoLTMuMWEzLjEsMy4xLDAsMCwwLS4zLTEuMywyLjMsMi4zLDAsMCwwLS43LTEsNC4xLDQuMSwwLDAsMC0xLjEtLjcsMy40LDMuNCwwLDAsMC0yLjgsMCw0LjEsNC4xLDAsMCwwLTEuMS43LDMuNiwzLjYsMCwwLDAtLjcsMSwzLjEsMy4xLDAsMCwwLS4zLDEuMywyLjgsMi44LDAsMCwwLC4zLDEuMywzLDMsMCwwLDAsMS44LDEuOCwzLjUsMy41LDAsMCwwLDEuNC4zaDIuN3YzaC0xLjhhOC41LDguNSwwLDAsMC0yLjMuNCw3LDcsMCwwLDAtMy4xLDMuMSw1LjQsNS40LDAsMCwwLS41LDIuMiw1LjksNS45LDAsMCwwLC41LDIuMiw0LjYsNC42LDAsMCwwLDEuMywxLjgsNS43LDUuNywwLDAsMCwxLjgsMS4yLDYuOCw2LjgsMCwwLDAsNC42LDAsNi4yLDYuMiwwLDAsMCwxLjktMS4yLDUuOSw1LjksMCwwLDAsMS4zLTEuOCw1LjcsNS43LDAsMCwwLC40LTIuMiw0LjgsNC44LDAsMCwwLS42LTIuNGgtMy41WiIgc3R5bGU9ImZpbGw6I2ZkYzQwMSIvPjxwYXRoIGQ9Ik0yOTQuMiwxNTYuOGExMy4xLDEzLjEsMCwwLDEtMy45LTkuNywxMi43LDEyLjcsMCwwLDEsMy45LTkuNiwxMywxMywwLDAsMSw5LjYtMy44LDEzLjcsMTMuNywwLDAsMSw3LjMsMS45LDEyLDEyLDAsMCwxLDQuOCw1LjZoLTQuMmE4LjMsOC4zLDAsMCwwLTcuOS00LjUsOS44LDkuOCwwLDAsMC03LjIsMi45LDExLjYsMTEuNiwwLDAsMCwwLDE1LjEsOS43LDkuNywwLDAsMCw3LjIsMi44LDEwLjUsMTAuNSwwLDAsMCw0LjctMS4xLDguOCw4LjgsMCwwLDAsMy4yLTMuNGg0LjJhMTEuNSwxMS41LDAsMCwxLTQuOCw1LjYsMTMuOCwxMy44LDAsMCwxLTcuMywyLDEzLjQsMTMuNCwwLDAsMS05LjYtMy44IiBzdHlsZT0iZmlsbDojZmRjNDAxIi8+PHBhdGggZD0iTTMyMiwxNTcuNmExMi4zLDEyLjMsMCwwLDEsMC0xNS42LDkuOCw5LjgsMCwwLDEsNy4yLTIuOSw4LjgsOC44LDAsMCwxLDQuNiwxLjIsOC45LDguOSwwLDAsMSwzLjEsMy4zdi00LjJoMy41djIxaC0zLjV2LTQuM2E3LjYsNy42LDAsMCwxLTMuMSwzLjMsOCw4LDAsMCwxLTQuNiwxLjMsOS4yLDkuMiwwLDAsMS03LjItMy4xbTEyLjgtMmE4LjgsOC44LDAsMCwwLDAtMTEuNCw2LjksNi45LDAsMCwwLTUtMi4xLDcuMiw3LjIsMCwwLDAtNSwyLDcuNyw3LjcsMCwwLDAtMi4xLDUuNyw4LDgsMCwwLDAsMi4xLDUuNyw2LjYsNi42LDAsMCwwLDUsMi4yLDYuOSw2LjksMCwwLDAsNS0yLjEiIHN0eWxlPSJmaWxsOiNmZGM0MDEiLz48cGF0aCBkPSJNMzQ4LjgsMTM5LjRWMTQzYTYuNiw2LjYsMCwwLDEsNi40LTMuOXYzLjZoLS45YTUuNiw1LjYsMCwwLDAtNC4xLDEuNGMtLjkuOS0xLjQsMi41LTEuNCw0Ljh2MTEuNWgtMy41di0yMVoiIHN0eWxlPSJmaWxsOiNmZGM0MDEiLz48cGF0aCBkPSJNMzY3LjQsMTYwLjdhOS40LDkuNCwwLDAsMS03LjMtMywxMi4xLDEyLjEsMCwwLDEsMC0xNS43LDEwLjEsMTAuMSwwLDAsMSw3LjQtMi45LDkuNSw5LjUsMCwwLDEsNy4zLDIuOCw5LjMsOS4zLDAsMCwxLDIuOCw3LjEsMTMuNCwxMy40LDAsMCwxLS4xLDIuMUgzNjAuOGE2LjcsNi43LDAsMCwwLDIsNC45LDYuMiw2LjIsMCwwLDAsNC42LDEuOCw2LjksNi45LDAsMCwwLDMuNi0uOSw1LjEsNS4xLDAsMCwwLDIuMS0yLjVoMy44YTkuNiw5LjYsMCwwLDEtOS41LDYuM200LjctMTdhNi42LDYuNiwwLDAsMC00LjctMS44LDYuNSw2LjUsMCwwLDAtNC42LDEuOCw3LjYsNy42LDAsMCwwLTIsNC45SDM3NGE3LDcsMCwwLDAtMS45LTQuOSIgc3R5bGU9ImZpbGw6I2ZkYzQwMSIvPjwvc3ZnPg=="
+          alt="Header Image"
+          style="width: 210px; height: auto"
+        />
+      </div>
+      <div class="section" style="margin-top: 40px">
+        <div>
+          <u><b>EDIVERTER / GARBAGE ROOM:</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Frequency</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Activity</b>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Scheduled Maintenance</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check/Clean and/or adjust photo sensor & reflector
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check and clean all limit switches (if applicable)
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check power pack (if applicable)
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check & grease diverter bearings
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check electrical actuator & controls
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check PLC functions & all wiring
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check all electronic sequencing
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check and adjust the stopping position (if applicable)
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check safety controls
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check hopper sliding door, slides, cable condition and fusible link
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check turn buckle on hopper
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Test operations of entire system
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Report on steel welds & structure
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Report on housekeeping of garbage room
+        </div>
+      </div>
+
+      <div class="section" style="margin-top: 20px">
+        <div>
+          <u><b>CAROUSELS & LINEARS: ADDITIONAL TO THE ABOVE</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Frequency</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Activity</b>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Scheduled Maintenance</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Ensure the plastic floor tray is clean
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Clean the machine
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check and grease the ram screw rod and nut
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check drive chain tension
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check gearbox mount bolts
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check the plastic floor tray and centre runners
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check and grease carousel ring gear and motor pinion, adjust tension
+          if necessary
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Check & grease conveyor track and screw drive
+        </div>
+      </div>
+    </div>
+
+    <div id="page-wrapper" style="page-break-before: always; font-size: 13px">
+      <div class="section">
+        <img
+          src="images/header-image.svg"
+          alt="Header Image"
+          style="width: 210px; height: auto"
+        />
+      </div>
+      <div class="section" style="margin-top: 40px">
+        <div>
+          <u><b>CHUTE CLEANING</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Frequency</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Activity</b>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Scheduled Maintenance</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Attach "Chute Cleaning in Progress" Signs to Hopper Doors to ensure
+          awareness by indicating that cleaning is underway.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Use an environmentally friendly solution to break down any residue or
+          buildup in the chute.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Use high-pressure water to thoroughly clean the chute, dislodging any
+          remaining debris.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Wipe down and sanitize the hopper doors to maintain hygiene standards.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          High-pressure clean discharge hopper to remove any buildup or
+          contaminants.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Thoroughly clean all waste equipment
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Ensure that the waste room is free of excess water to prevent slips
+          and maintain cleanliness.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Use Odour control spray to neutralize any unpleasant smells emanating
+          from the waste chute, ensuring a more pleasant environment.
+        </div>
+      </div>
+
+      <div class="section" style="margin-top: 20px">
+        <div>
+          <u><b>WASTE ROOM/ EQUIPMENT CLEANING</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Frequency</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Activity</b>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Scheduled Maintenance</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Ensure that all equipment is powered off and disconnected from any
+          power source.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Use an environmentally friendly solution to break down any residue or
+          buildup on the equipment.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Use high-pressure water to clean the room and waste equipment,
+          dislodging any remaining debris.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Rinse the equipment thoroughly with clean water to remove any residue
+          of the cleaning solution.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Ensure that all surfaces are thoroughly cleaned and sanitized.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Before reactivating the equipment, double-check that all surfaces are
+          dry and free from any residue.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Reconnect power source and test equipment
+        </div>
+      </div>
+
+      <div class="section" style="margin-top: 20px">
+        <div>
+          <u><b>WASTE BIN CLEANING</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Frequency</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Activity</b>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Scheduled Maintenance</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Assess Bin’s condition, noting any damages or specific areas requiring
+          attention
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Remove any excess waste in the Bin
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          High Pressure Clean to Remove Grime, Dirt and Residue from the
+          interior and exterior surfaces
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Manually scrub any stubborn stains, particularly around handles, lids
+          and base areas
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Apply disinfectants to eliminate bacteria and reduce odours
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          Use eco-friendly deodorizing agent to leave the bin smelling fresh
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Provide a report on the cleaning, noting any damages or
+          recommendations for repair
+        </div>
+      </div>
+    </div>
+
+    <div id="page-wrapper" style="page-break-before: always; font-size: 13px">
+      <div class="section">
+        <img
+          src="images/header-image.svg"
+          alt="Header Image"
+          style="width: 210px; height: auto"
+        />
+      </div>
+      <div class="section" style="margin-top: 40px">
+        <div>
+          <u><b>DOOR INSPECTIONS</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Frequency</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Activity</b>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Self-Closing Hopper</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Inspect against drawings that self-closing hoppers have been added,
+          removed or modified. <br />
+          Check overall dimensioning of the self-closing hopper i.e. gaps, leaf
+          and the door frame are in accordance with the relevant test report
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Screw Mounted Self Closing Hoppers (where applicable)</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Inspect to ensure screw fixings are all present and engaged in the
+          frame securely and are in accordance with the relevant test report
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Hardware General</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          <ol
+            style="
+              padding-left: 40px;
+              list-style-type: upper-alpha;
+              margin-top: 0px;
+              margin-bottom: 0px;
+              padding-top: 0px;
+              padding-bottom: 0px;
+            "
+          >
+            <li>
+              Locksets, latches, closers, pivots and hinges: Inspect all
+              hardware required for closing and latching is fitted and is a make
+              and model that has been fire tested for the specific self-closing
+              hopper.
+            </li>
+            <li>
+              Inspect all hardware is located correctly, securely attached and
+              operational with the correct fittings in accordance with the
+              requirements of the relevant test report.
+            </li>
+            <li>
+              Inspect the door leaf and door frame are free from non-approved
+              fittings, fixings, or attachments and free from damage caused by
+              relocation of hardware items.
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Self-Closing and Self- Latching Function</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          <ol
+            style="
+              padding-left: 40px;
+              list-style-type: upper-alpha;
+              margin-top: 0px;
+              margin-bottom: 0px;
+              padding-top: 0px;
+              padding-bottom: 0px;
+            "
+          >
+            <li>
+              Verify the opening and closing forces are such that the
+              self-closing hoppers can be easily opened and closed in normal
+              conditions.
+            </li>
+            <li>
+              Inspect the door leaf and door set is self-closing and
+              self-latching if appropriate.
+            </li>
+          </ol>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Seals</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Inspect any installed door seals are approved for us on the
+          proprietary door type, functioning as intended and are not damaged.
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Leaves</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          <ol
+            style="
+              padding-left: 40px;
+              list-style-type: upper-alpha;
+              margin-top: 0px;
+              margin-bottom: 0px;
+              padding-top: 0px;
+              padding-bottom: 0px;
+            "
+          >
+            <li>
+              Inspect panel to ensure it is free of any visible delamination,
+              and other damage.
+            </li>
+            <li>
+              Inspect that the any perimeter seal is in good condition and not
+              damaged.
+            </li>
+            <li>Inspect door hinges are in</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top: 20px">
+        <div>
+          <u><b>ODOUR MANAGEMENT SYSTEM TOP UP</b></u>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 5px;
+          border: 1px solid black;
+          background-color: #f5c644;
+          color: white;
+        "
+      >
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Frequency</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            height: 30px;
+            padding-top: 5px;
+          "
+        >
+          <b>Activity</b>
+        </div>
+      </div>
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        >
+          <b>Scheduled Maintenance</b>
+        </div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Ensure system is clean and free of any debris, residue, or damage.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Drain remaining solution.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Pour solution into the odour management system's reservoir or
+          container.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Carefully inspect for any leaks, spills, or other issues.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Test the operation of the odour management system to ensure it is
+          functioning correctly.
+        </div>
+      </div>
+
+      <div class="section" style="border: 1px solid black; border-top: none">
+        <div
+          style="
+            width: 25%;
+            padding-left: 10px;
+            border-right: 1px solid black;
+            min-height: 22px;
+            padding-top: 5px;
+          "
+        ></div>
+        <div
+          style="
+            width: 75%;
+            padding-left: 10px;
+
+            min-height: 22px;
+            padding-top: 5px;
+            word-wrap: break-word;
+          "
+        >
+          Inspect program and adjust if required.
+        </div>
+      </div>
+    </div>
+
+    <div id="page-wrapper" style="page-break-before: always; font-size: 13px">
+      <div class="section">
+        <img
+          src="images/header-image.svg"
+          alt="Header Image"
+          style="width: 210px; height: auto"
+        />
+      </div>
+      <div class="section" style="margin-top: 40px">
+        <div>
+          <u><b>TERMS AND CONDITIONS</b></u>
+        </div>
+      </div>
+      <div class="section" style="margin-top: 10px">
+        <div style="font-size: 10px">
+          Normal working hours are defined as 8:30am to 4:30pm Monday through
+          Friday inclusive, excluding public holidays. Elephants Foot shall be
+          provided reasonable means of access to the equipment being serviced,
+          including supply of access keys, swipe cards, access codes, or any
+          other security devices required to access the garbage room and/or
+          equipment. Elephants Foot shall be permitted to start and stop all
+          equipment necessary to perform the herein-agreed services.
+        </div>
+      </div>
+      <div class="section" style="margin-top: 10px">
+        <div style="font-size: 10px">
+          These terms and conditions are between the parties described in the
+          Schedule, together the <b>Parties</b> and each a <b>Party</b>. These
+          terms and conditions and the Schedule form the entire agreement under
+          which we will provide the Goods and Services to you (together, the
+          <b>Agreement</b>).
+        </div>
+      </div>
+      <div
+        class="section"
+        style="
+          margin-top: 10px;
+          font-size: 10px;
+          display: flex;
+          flex-direction: row;
+          gap: 40px;
+        "
+      >
+        <div style="width: 50%; padding-left: 15px">
+          <ol
+            style="
+              padding-left: 10px;
+              gap: 5px;
+              display: flex;
+              flex-direction: column;
+            "
+            class="level-1"
+          >
+            <li>
+              <strong>ACCEPTANCE</strong>
+              <ol style="padding-left: 0px" class="level-2">
+                <li>
+                  You have requested the Goods and Services set out in the
+                  Schedule, and accept this Agreement by:
+                  <ol type="a" style="padding-left: 0px" class="level-3">
+                    <li>signing and returning this Agreement.</li>
+                    <li>
+                      making any payment of the Price (including any deposit).
+                    </li>
+                  </ol>
+                </li>
+                <li>
+                  Please read this Agreement carefully and contact us if you
+                  have any questions.
+                </li>
+              </ol>
+            </li>
+
+            <li>
+              <strong>GOODS AND SERVICES</strong>
+              <ol style="padding-left: 0px" class="level-2">
+                <li>
+                  We agree to provide you the Goods and Services in accordance
+                  with this Agreement and all relevant laws.
+                </li>
+                <li>
+                  You acknowledge and agree that any dates for delivery or for
+                  completion notified by us are estimates only, and, acting
+                  reasonably we will have no Liability to you for failing to
+                  meet any delivery or milestone date.
+                </li>
+                <li>
+                  We may provide the Goods and Services to you using our
+                  Personnel, and they are included in this Agreement.
+                </li>
+                <li>
+                  All variations to the Goods and Services must be agreed in
+                  writing between the Parties and will be priced in accordance
+                  with any schedule of rates provided by us, or otherwise as
+                  reasonably determined by us. If we consider that any
+                  instruction or direction from you constitutes a variation,
+                  then we will not be obliged to comply with such instruction or
+                  direction unless agreed in accordance with this clause 2.4.
+                </li>
+                <li>
+                  We (Elephants Foot) warrant that we hold all appropriate and
+                  necessary insurances required for the provision of the Goods
+                  and Services under this Agreement.
+                </li>
+              </ol>
+            </li>
+
+            <li>
+              <strong>PRICE AND PAYMENT</strong>
+              <ol style="padding-left: 0px" class="level-2">
+                <li>
+                  You agree to pay us the Price and all other reasonable
+                  expenses or disbursements properly incurred by us in the
+                  provision of the Goods and Services, in accordance with the
+                  Payment Terms. All amounts are stated in Australian dollars
+                  and are exclusive of GST (unless otherwise stated).
+                </li>
+                <li>
+                  Unless otherwise agreed between the Parties, any deposit in
+                  the Schedule must be paid before we commence the provision of
+                  the Goods and Services.
+                </li>
+                <li>
+                  If any amounts are unpaid 7 days after the payment date, we
+                  may suspend the provision of the Goods and Services until we
+                  receive payment.
+                </li>
+                <li>
+                  Subject to the invoice not being in dispute pursuant to Clause
+                  11.1, If invoices are outside of payment terms and the matter
+                  is sent for recovery of overdue invoices, the debtor/s shall
+                  pay for all costs actually incurred by in the recovery of any
+                  monies owed under this Agreement including recovery agent
+                  costs, repossession costs and solicitor costs on a
+                  solicitor/client basis.
+                </li>
+              </ol>
+            </li>
+
+            <li>
+              <strong>YOUR OBLIGATIONS AND WARRANTIES</strong>
+              <p>You represent, warrant, acknowledge and agree that:</p>
+              <ol type="a" style="padding-left: 0px" class="level-3">
+                <li>
+                  there are no legal restrictions preventing you from engaging
+                  us or agreeing to this Agreement.
+                </li>
+                <li>
+                  you have not relied on any representations or warranties made
+                  by us in relation to the Goods and Services (including as to
+                  whether the Goods and Services are or will be fit or suitable
+                  for your particular purposes), unless expressly stipulated in
+                  this Agreement.
+                </li>
+              </ol>
+            </li>
+          </ol>
+        </div>
+        <div style="width: 50%">
+          <ol
+            class="level-3"
+            style="
+              padding-left: 10px;
+              counter-reset: lvl3 2;
+              margin-bottom: 10px;
+            "
+          >
+            <li>
+              you will cooperate with us, and provide us with all documentation,
+              information, instructions, and access necessary to enable us to
+              provide the Goods and Services, as requested by us, from time to
+              time, and in a timely manner.
+            </li>
+            <li>
+              the information you provide to us is true, correct, and complete.
+            </li>
+            <li>
+              you will not infringe any third-party rights in working with us
+              and receiving the Goods and Services.
+            </li>
+            <li>
+              you will provide us and our Personnel with sufficient access, free
+              from harm or risk to health or safety, to any relevant premises
+              (including any facilities at the premises), to enable us to
+              provide the Goods and Services, including at the dates and times
+              that we may reasonably request; and
+            </li>
+            <li>
+              you are responsible for obtaining, and providing to us if
+              necessary, any access, consents, licences, approvals, and
+              permissions from other parties necessary for the Goods and
+              Services to be provided, at your cost.
+            </li>
+          </ol>
+
+          <ol
+            class="level-1"
+            style="
+              counter-reset: lvl1 4;
+              padding-left: 10px;
+              gap: 5px;
+              display: flex;
+              flex-direction: column;
+            "
+          >
+            <li>
+              <strong>YOUR STATUTORY RIGHTS</strong>
+              <ol style="padding-left: 0px" class="level-2">
+                <li>
+                  Certain legislation, including the Australian Consumer Law
+                  (ACL) in the Competition and Consumer Act 2010 and similar
+                  consumer protection laws and regulations, may confer you with
+                  rights, warranties, guarantees and remedies relating to the
+                  Goods and Services which cannot be excluded, restricted or
+                  modified (Statutory Rights). Nothing in this Agreement
+                  excludes your Statutory Rights as a consumer under the ACL.
+                </li>
+                <li>
+                  You agree that our Liability for the Goods and Services is
+                  governed solely by the ACL and this Agreement.
+                </li>
+                <li>
+                  Subject to your Statutory Rights, we exclude all express and
+                  implied warranties, representations and guarantees of any kind
+                  (whether under statute, law, equity or on any other basis) and
+                  all materials, work, goods and services (including the Goods
+                  and Services) are provided to you without warranties,
+                  representations and guarantees of any kind.
+                </li>
+              </ol>
+            </li>
+
+            <li>
+              <strong>DELIVERY, TITLE AND RISK</strong>
+              <ol style="padding-left: 0px" class="level-2">
+                <li>
+                  If this Agreement states that:
+                  <ol type="a" style="padding-left: 0px" class="level-3">
+                    <li>
+                      we are responsible for delivering the Goods to you, we
+                      will use reasonable endeavours to deliver the Goods to the
+                      premises by the delivery time, as notified by us to you;
+                      or
+                    </li>
+                    <li>
+                      you are responsible for collecting the Goods from us, we
+                      will use reasonable endeavours to make available the
+                      Goods, and you agree to collect the Goods, at the
+                      collection location by the collection time, as notified by
+                      us to you. You agree to comply with any policies and
+                      procedures which apply at the relevant collection
+                      location.
+                    </li>
+                  </ol>
+                </li>
+                <li>
+                  Title in the Goods will remain with us until all amounts due
+                  and payable to us under this Agreement are paid in full. Risk
+                  in the Goods will pass to you on delivery of the Goods to you
+                  or collection of the Goods by you (as applicable).
+                </li>
+                <li>
+                  You agree that we hold a general lien over any Goods owned by
+                  us that are in your possession, for the satisfactory
+                  performance of your obligations under this Agreement. You
+                  agree that this Agreement and your obligations under this
+                  Agreement create a registrable security interest in favour of
+                  us, and you consent to the security interest (and any other
+                  registrable interest created in connection with this
+                  Agreement) being registered on any relevant securities
+                  register (and you must do all things to enable us to do so).
+                </li>
+              </ol>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-wrapper" style="page-break-before: always">
+      <div class="section">
+        <img
+          src="images/header-image.svg"
+          alt="Header Image"
+          style="width: 210px; height: auto"
+        />
+      </div>
+
+      <div
+        class="section"
+        style="
+          margin-top: 20px;
+          font-size: 10px;
+          display: flex;
+          flex-direction: row;
+          gap: 40px;
+        "
+      >
+        <div style="width: 50%; padding-left: 15px">
+          <ol
+            class="level-1"
+            style="
+              counter-reset: lvl1 6;
+              padding-left: 10px;
+              gap: 5px;
+              display: flex;
+              flex-direction: column;
+            "
+          >
+            <li>
+              <strong>TERM AND TERMINATION</strong>
+              <ol style="padding-left: 0px" class="level-2">
+                <li>
+                  This Agreement will commence on the Start Date, and will
+                  continue until the End Date, unless terminated earlier in
+                  accordance with its terms.
+                </li>
+                <li>
+                  Either Party may terminate this Agreement if the other Party
+                  breaches a material term of this Agreement, and that breach
+                  has not been remedied within 10 business days of being
+                  notified by the relevant Party.
+                </li>
+                <li>
+                  On termination or expiry of this Agreement, you agree that:
+                  <ol type="a" style="padding-left: 0px" class="level-3">
+                    <li>
+                      any amounts paid for Goods and Services rendered by us are
+                      non-refundable.
+                    </li>
+                    <li>
+                      you agree to pay us all amounts due and payable to us
+                      under this Agreement (including for all Goods and Services
+                      provided by us) up to the date of termination, as a debt
+                      immediately due and payable; and
+                    </li>
+                    <li>
+                      you agree to return or give us access to recover all
+                      property belonging to us on request (including any
+                      Intellectual Property or Confidential Information), and to
+                      give us or our Personnel such rights of access necessary
+                      to exercise our rights under this clause.
+                    </li>
+                  </ol>
+                </li>
+                <li>
+                  The accrued rights, obligations and remedies of the Parties
+                  are not affected by termination of this Agreement.
+                </li>
+                <li>
+                  0% of the remaining agreement to be paid by the client if
+                  agreement is terminated prior to the expiry of the agreement.
+                </li>
+              </ol>
+            </li>
+            <li>
+              <strong>LIABILITY, INDEMNITY AND EXCLUSIONS</strong>
+              <ol style="padding-left: 0px" class="level-2">
+                <li>
+                  <b>Exclusions:</b> Despite anything to the contrary, to the
+                  maximum extent permitted by law, we will not be liable for,
+                  and you waive and release us from and against, any Liability
+                  caused or contributed to by (whether directly or indirectly):
+                  <ol type="a" style="padding-left: 0px" class="level-3">
+                    <li>
+                      acts or omissions of you or your Personnel (including any
+                      works, goods or services provided by you or your
+                      Personnel).
+                    </li>
+                    <li>
+                      your, or your Personnel’s, breach of this Agreement, any
+                      law or third-party rights
+                    </li>
+                    <li>
+                      any information, documentation, specifications or
+                      directions given by you or your Personnel; and
+                    </li>
+                    <li>
+                      any event or circumstance beyond our reasonable control.
+                    </li>
+                  </ol>
+                </li>
+                <li>
+                  <b>Indemnity:</b> Despite anything to the contrary, to the
+                  maximum extent permitted by law, you are liable for, and agree
+                  to make good, indemnify us and hold us harmless in respect of,
+                  any Liability that we may suffer, incur or otherwise become
+                  liable for, arising from or in connection with:
+                  <ol type="a" style="padding-left: 0px" class="level-3">
+                    <li>acts or omissions of you or your Personnel; or</li>
+                    <li>
+                      any information, documentation, specifications or
+                      directions given by you or your Personnel.
+                    </li>
+                  </ol>
+                </li>
+                <li>
+                  <b>Limitation of liability:</b> Despite anything to the
+                  contrary, to the maximum extent permitted by law:
+                  <ol type="a" style="padding-left: 0px" class="level-3">
+                    <li>
+                      we will not be liable for any Consequential Loss; and
+                    </li>
+                    <li>
+                      our maximum aggregate Liability in relation to the
+                      provision of the Goods and Services or this Agreement will
+                      be limited to us resupplying the Goods and Services to you
+                      or, in our sole discretion, to us repaying you the amount
+                      of the Price paid by you to us in respect of the provision
+                      of the relevant Goods and Services to which the Liability
+                      relates.
+                    </li>
+                  </ol>
+                </li>
+              </ol>
+            </li>
+            <li>
+              <strong>INTELLECTUAL PROPERTY</strong>
+              <ol class="level-2" style="padding-left: 0px">
+                <li>
+                  As between the Parties, all Intellectual Property Rights
+                  developed, adapted, modified or created by or on behalf of us
+                  or our Personnel in connection with this Agreement or the
+                  provision of the Goods and Services, will at all times vest,
+                  or remain vested, in us.
+                </li>
+                <li>
+                  You agree that we own all Intellectual Property Rights in all
+                  Intellectual Property owned, licensed or developed by or on
+                  behalf of us or our Personnel before the Start Date and/or
+                  developed by us or our Personnel independently of this
+                  Agreement and nothing in this Agreement constitutes a transfer
+                  or assignment of any of our Intellectual Property Rights
+                  unless expressly stated.
+                </li>
+              </ol>
+            </li>
+          </ol>
+        </div>
+
+        <div style="width: 50%; padding-left: 15px">
+          <ol
+            class="level-1"
+            style="
+              counter-reset: lvl1 9;
+              padding-left: 10px;
+              gap: 5px;
+              display: flex;
+              flex-direction: column;
+            "
+          >
+            <li>
+              <strong>CONFIDENTIALITY</strong>
+              <ol class="level-2" style="padding-left: 0px">
+                <li>
+                  Subject to clause 10.2, you must (and must ensure that your
+                  Personnel do) keep confidential, and not use or permit any
+                  unauthorised use of, all Confidential Information.
+                </li>
+                <li>
+                  Clause 10.1 does not apply where the disclosure is required by
+                  law or the disclosure is to a professional adviser in order to
+                  obtain advice in relation to matters arising in connection
+                  with this Agreement and provided that you ensure the adviser
+                  complies with the terms of clause 10.1.
+                </li>
+              </ol>
+            </li>
+            <li>
+              <strong>GENERAL</strong>
+              <ol class="level-2" style="padding-left: 0px">
+                <li>
+                  <b>Disputes:</b> A Party may not commence court proceedings
+                  relating to any dispute, controversy or claim arising from, or
+                  in connection with, this Agreement (including any question
+                  regarding its existence, validity or termination) (Dispute)
+                  without first meeting with a senior representative of the
+                  other Party to seek (in good faith) to resolve the Dispute. If
+                  the Parties cannot agree how to resolve the Dispute at that
+                  initial meeting, either Party may refer the matter to a
+                  mediator. If the Parties cannot agree on who the mediator
+                  should be, either Party may ask the law society of the State
+                  to appoint a mediator. The mediator will decide the time,
+                  place and rules for mediation. The Parties agree to attend the
+                  mediation in good faith, to seek to resolve the Dispute. The
+                  costs of the mediation will be shared equally between the
+                  Parties. Nothing in this clause will operate to prevent a
+                  Party from seeking urgent injunctive or equitable relief from
+                  a court of appropriate jurisdiction.
+                </li>
+                <li>
+                  <b>Governing law:</b> This Agreement is governed by the laws
+                  of the State. Each Party irrevocably and unconditionally
+                  submits to the exclusive jurisdiction of the courts operating
+                  in the State and any courts entitled to hear appeals from
+                  those courts and waives any right to object to proceedings
+                  being brought in those courts.
+                </li>
+                <li>
+                  <b>GST:</b> If and when applicable, GST payable on the Price
+                  will be set out in our invoice. You agree to pay the GST
+                  amount at the same time as you pay the Price.
+                </li>
+                <li>
+                  <b>Notices:</b> Any notice given under this Agreement must be
+                  in writing addressed to the relevant address last notified by
+                  the recipient to the Parties. Any notice may be sent by
+                  standard post or email and will be deemed to have been served
+                  on the expiry of 48 hours in the case of post, or at the time
+                  of transmission in the case of transmission by email.
+                </li>
+                <li>
+                  <b>Severance:</b> If any provision (or part of it) under this
+                  Agreement is held to be unenforceable or invalid in any
+                  jurisdiction, then it will be interpreted as narrowly as
+                  necessary to allow it to be enforceable or valid. If a
+                  provision (or part of it) under this Agreement cannot be
+                  interpreted as narrowly as necessary to allow it to be
+                  enforceable or valid, then the provision (or part of it) must
+                  be severed from this Agreement and the remaining provisions
+                  (and remaining part of the provision) of this Agreement is
+                  valid and enforceable.
+                </li>
+                <li>
+                  <b>Survival:</b> Clauses 3, 5, 6.3, 7.3, 8, 9, 10 and 11 will
+                  survive the termination or expiry of this Agreement.
+                </li>
+              </ol>
+            </li>
+          </ol>
+
+          <ol
+            class="level-1"
+            style="
+              counter-reset: lvl1 11;
+              padding-left: 10px;
+              gap: 5px;
+              display: flex;
+              flex-direction: column;
+            "
+          >
+            <li>
+              <strong>INTERPRETATION &amp; DEFINITIONS</strong>
+              <ol class="level-2" style="padding-left: 0px">
+                <li>
+                  Any reference to “Goods and Services” may mean “Goods and/or
+                  Services”, as the case may be.
+                </li>
+                <li>
+                  In this Agreement, unless the context otherwise requires,
+                  capitalised terms have the meanings given to them in the
+                  Schedule, within these terms and conditions, and:
+                  <p>
+                    <b>Confidential Information</b> includes information which:
+                  </p>
+                  <ol class="level-3" type="a" style="padding-left: 0px">
+                    <li>
+                      is disclosed to you in connection with this Agreement at
+                      any time.
+                    </li>
+                    <li>
+                      is prepared or produced under or in connection with this
+                      Agreement at any time.
+                    </li>
+                    <li>relates to our business, assets or affairs; or</li>
+                    <li>
+                      relates to the subject matter of, the terms of and/or any
+                      transactions contemplated by this Agreement, whether or
+                      not such information or documentation is reduced to a
+                      tangible form or marked in writing as “confidential”, and
+                      howsoever you receive that information.
+                    </li>
+                  </ol>
+                </li>
+              </ol>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <div id="page-wrapper" style="page-break-before: always; font-size: 13px">
+      <div class="section">
+        <img
+          src="images/header-image.svg"
+          alt="Header Image"
+          style="width: 210px; height: auto"
+        />
+      </div>
+
+      <div
+        class="section"
+        style="
+          margin-top: 20px;
+          font-size: 10px;
+          display: flex;
+          flex-direction: row;
+          gap: 40px;
+        "
+      >
+        <div style="width: 50%; padding-left: 15px">
+          <p>
+            <b>Consequential Loss</b> includes any consequential, special or
+            indirect loss, damage or expense including any real or anticipated
+            loss of revenue, loss of profit, loss of use, loss of occupation,
+            loss of benefit, loss of financial opportunity, or economic loss
+            whether arising out of a breach of this Agreement, at law, under any
+            statute, in equity, or in tort (including negligence).
+          </p>
+          <p>
+            <b>Intellectual Property</b> means any copyright, registered or
+            unregistered design, patent or trademark rights, domain names,
+            know-how, inventions, processes, trade secrets or Confidential
+            Information; or circuit layouts, software, computer programs,
+            databases or source codes, including any application, or right to
+            apply, for registration of, and any improvements, enhancements or
+            modifications of, the foregoing.
+          </p>
+        </div>
+        <div style="width: 50%; padding-left: 15px">
+          <p>
+            <b>Intellectual Property Rights</b> means for the duration of the
+            rights in any part of the world, any industrial or intellectual
+            property rights, whether registrable or not, including in respect of
+            Intellectual Property.
+          </p>
+          <p>
+            <b>Liability</b> means any expense, cost, liability, loss, damage,
+            claim, notice, entitlement, investigation, demand, proceeding or
+            judgment (whether under statute, contract, equity, tort (including
+            negligence), indemnity or otherwise), howsoever arising, whether
+            direct or indirect and/or whether present, unascertained, future or
+            contingent and whether involving a third party, a Party or
+            otherwise.
+          </p>
+          <p>
+            <b>Personnel</b> means, in respect of a Party, any of its employees,
+            consultants, suppliers, subcontractors or agents.
+          </p>
+          <p>
+            <b>Schedule</b> means the schedule to which this Agreement is
+            attached.
+          </p>
+        </div>
+      </div>
+      <div
+        class="section"
+        style="margin-top: 40px; display: flex; flex-direction: row; gap: 30px"
+      >
+        <div style="width: 50%">
+          <div
+            style="
+              background-color: #f5c644;
+              color: white;
+
+              padding: 10px;
+              border: black 1px solid;
+              min-height: 80px;
+              display: flex;
+              flex-direction: column;
+              gap: 5px;
+            "
+          >
+            <div><b>EXECUTION for and on behalf of</b></div>
+            <div><b>ELEPHANTS FOOT SERVICE & CARE PTY LTD</b></div>
+            <div><b>ABN 33 611 438 576</b></div>
+            <div><b>by a duly authorised representative:</b></div>
+          </div>
+          <div style="padding: 10px; border: black 1px solid; border-top: none">
+            <b>NAME:</b>
+          </div>
+          <div
+            style="
+              padding: 10px;
+              border: black 1px solid;
+              border-top: none;
+              min-height: 40px;
+            "
+          >
+            <b>SIGNATURE:</b>
+          </div>
+          <div style="padding: 10px; border: black 1px solid; border-top: none">
+            <b>DATE:</b>
+          </div>
+        </div>
+        <div style="width: 50%">
+          <div
+            style="
+              background-color: #f5c644;
+              color: white;
+
+              padding: 10px;
+              border: black 1px solid;
+              min-height: 80px;
+            "
+          >
+            <b
+              >EXECUTED for and on behalf of by a duly authorised
+              representative</b
+            >
+          </div>
+          <div style="padding: 10px; border: black 1px solid; border-top: none">
+            <b>NAME:</b>
+          </div>
+          <div
+            style="
+              padding: 10px;
+              border: black 1px solid;
+              border-top: none;
+              min-height: 40px;
+            "
+          >
+            <b>SIGNATURE:</b>
+          </div>
+          <div style="padding: 10px; border: black 1px solid; border-top: none">
+            <b>DATE:</b>
+          </div>
+        </div>
+      </div>
+      <div class="section" style="margin-top: 10px">
+        Please return this agreement to Elephants Foot Equipment Sales & Service
+        either by fax to (02) 9707 2588 or email
+        customercare@elephantsfoot.com.au
+      </div>
+    </div>
+  </body>
+</html>
