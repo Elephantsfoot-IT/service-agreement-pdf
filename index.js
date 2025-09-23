@@ -9,7 +9,7 @@ exports.handler = async (event) => {
   dotenv.config();
   try {
     const htmlPath = path.resolve(__dirname, "service-agreement.html");
-    const pdfBuffer = await renderPdfFromHtmlFile(htmlPath, event.sites);
+    const pdfBuffer = await renderPdfFromHtmlFile(htmlPath, event.data);
     const result = await uploadPdfAndGetUrl(pdfBuffer);
     return {
       statusCode: 200,
