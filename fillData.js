@@ -157,7 +157,7 @@ function getDiscountDefault(serviceCount) {
  */
 function frequencyToMultiplier(frequency) {
   const f = (frequency ?? "").toString().trim().toLowerCase();
-  
+
   if (!f) return 0;
   if (f === "none") return 0;
   if (f === "yearly") return 1;
@@ -280,7 +280,7 @@ function computeGrandTotal({
     wasteRoomCleaningFrequency,
     binCleaningFrequency,
     odourControlFrequency,
-  ].filter((f) => f != null && String(f).trim() !== "").length;
+  ].filter((f) => f != null && String(f).trim() !== "" && String(f).trim() !== "none").length;
 
   const discountPct = Number(getDiscount(Number(serviceCount))) || 0;
   const discountAmt = discountPct ? (subtotal * discountPct) / 100 : 0;
@@ -665,7 +665,7 @@ const getOdourControlContent = (sites, frequency, units) => {
           <div><b>*240V 10AMP Outlet Must be Supplied in Waste Room</b></div>
           <div style="display:flex; flex-direction:row; align-items:center; gap:10px;">
             <div style="width:55px; height:30px; border:1px solid black; display: flex; justify-content: center; align-items: center; font-weight: bold;">${
-              frequency == "none" ? "" : (unit || "")
+              frequency == "none" ? "" : unit || ""
             }</div>
             <div>UNITS</div>
           </div>
@@ -747,6 +747,168 @@ const getWasteBinCleanContent = (sites, frequency) => {
   `;
 };
 
+/**
+ * Build the Incentives section HTML based on selected service frequencies.
+ * - Returns "" if < 3 services are selected.
+ * - Tier rules:
+ *    3 services  -> Basic
+ *    4–5         -> Essential
+ *    6+          -> Premium
+ */
+const getIncentivesContent = ({ frequencies = {} } = {}) => {
+  // --- helpers ---------------------------------------------------------------
+  const norm = (v) =>
+    String(v ?? "")
+      .trim()
+      .toLowerCase();
+
+  const isSelected = (v) => {
+    const n = norm(v);
+    return n !== "" && n !== "none";
+  };
+
+  // Extract & count selected services (defensive: frequencies may be missing)
+  const serviceCount = [
+    frequencies?.chuteCleaningFrequency,
+    frequencies?.equipmentMaintenanceFrequency,
+    frequencies?.selfClosingHopperDoorInspectionFrequency,
+    frequencies?.wasteRoomCleaningFrequency,
+    frequencies?.binCleaningFrequency,
+    frequencies?.odourControlFrequency,
+  ].filter(isSelected).length;
+
+  if (serviceCount < 3) return ""; // no incentives if fewer than 3 services
+
+  // Determine tier + incentives
+  let tier = "";
+  let incentives = [];
+
+  if (serviceCount === 3) {
+    tier = "BASIC";
+    incentives = [
+      "Price Lock Guarantee (24 Months)",
+      "Priority Response Within 8 Hours",
+      "Priority Booking",
+    ];
+  } else if (serviceCount > 3 && serviceCount < 6) {
+    tier = "ESSENTIAL";
+    incentives = [
+      "Price Lock Guarantee (24 Months)",
+      "Priority Response Within 8 Hours",
+      "Priority Booking",
+      "Flexible 21-Day Payment Terms",
+      "10% Discounts on Parts",
+      "5% Service Pricing Discounts",
+    ];
+  } else {
+    // serviceCount >= 6
+    tier = "PREMIUM";
+    incentives = [
+      "Price Lock Guarantee (24 Months)",
+      "Priority Response Within 8 Hours",
+      "Priority Booking",
+      "Flexible 21-Day Payment Terms",
+      "15% Discounts on Parts",
+      "10% Service Pricing Discounts",
+      "Complimentary Odour Control (First 3 Months)",
+    ];
+  }
+
+  // --- HTML fragments (kept consistent) -------------------------------------
+  const tableHeader = `
+    <div class="section" style="margin-top:40px;">
+      <div><u><b>INCENTIVES:</b></u></div>
+    </div>
+    <div
+      class="section"
+      style="
+        margin-top:5px;
+        border:1px solid black;
+        background-color:#f5c644;
+        color:white;
+        display:flex;
+      "
+    >
+      <div
+        style="
+          width:30%;
+          text-align:center;
+          border-right:1px solid black;
+          min-height:22px;
+          padding-top:5px;
+          padding-left:10px;
+        "
+      >
+        <b>TIER</b>
+      </div>
+      <div
+        style="
+          width:70%;
+          text-align:center;
+          min-height:22px;
+          padding-top:5px;
+          padding-left:10px;
+        "
+      >
+        <b>INCENTIVES</b>
+      </div>
+    </div>
+  `;
+
+  const rowTemplate = ({
+    tierText,
+    incentiveText,
+  }) => `
+    <div
+      class="section"
+      style="
+        border:1px solid black;
+        color:black;
+        border-top:none;
+        display:flex;
+      "
+    >
+      <div
+        style="
+          width:30%;
+          text-align:left;
+          border-right:1px solid black;
+          min-height:22px;
+          padding-top:5px;
+          padding-left:10px;
+        "
+      >
+        ${tierText}
+      </div>
+      <div
+        style="
+          width:70%;
+          text-align:left;
+          min-height:22px;
+          padding-top:5px;
+          padding-left:10px;
+        "
+      >
+        ${incentiveText}
+      </div>
+    </div>
+  `;
+
+  // First row shows the tier; subsequent rows keep tier column empty
+  const rows = (incentives || [])
+    .map((inc, i) =>
+      rowTemplate({
+        tierText: i === 0 ? `<b>${tier}</b>` : "",
+        incentiveText: inc || "",
+      })
+    )
+    .join("");
+
+  return tableHeader + rows;
+};
+
+
+
 // ============================================================================
 // Main Templating – fillData()
 // ============================================================================
@@ -775,7 +937,12 @@ function fillData(html, data) {
       d?.businessCity,
       d?.businessPostcode,
       d?.businessState,
-      (d?.businessStreetAddress&& d?.businessCity&& d?.businessPostcode && d?.businessState) ? "Australia" : "",
+      d?.businessStreetAddress &&
+      d?.businessCity &&
+      d?.businessPostcode &&
+      d?.businessState
+        ? "Australia"
+        : "",
     ],
     ", "
   );
@@ -811,7 +978,7 @@ function fillData(html, data) {
     odourControlUnits: d?.odourControlUnits || {},
     getDiscount: getDiscountDefault,
   });
-  const contractTotal = (grand === 0 || !grand) ? "" : formatMoney(grand * 2);
+  const contractTotal = grand === 0 || !grand ? "" : formatMoney(grand * 2);
 
   // Service sections (each builder is defensive)
   const sites = d?.serviceAgreement?.sites || [];
@@ -850,6 +1017,21 @@ function fillData(html, data) {
   // Today (AU)
   const today = TODAY_AU;
 
+  let incentivesHTML = "";
+  if (d?.serviceAgreement?.incentives) {
+    incentivesHTML = getIncentivesContent({
+      frequencies: {
+        chuteCleaningFrequency: d?.chuteCleaningFrequency ?? null,
+        equipmentMaintenanceFrequency: d?.equipmentMaintenanceFrequency ?? null,
+        selfClosingHopperDoorInspectionFrequency:
+          d?.selfClosingHopperDoorInspectionFrequency ?? null,
+        wasteRoomCleaningFrequency: d?.wasteRoomCleaningFrequency ?? null,
+        binCleaningFrequency: d?.binCleaningFrequency ?? null,
+        odourControlFrequency: d?.odourControlFrequency ?? null,
+      },
+    });
+  }
+
   // Perform safe replacements
   let out = String(html ?? "");
   out = safeReplaceAll(out, "{COMPANY_NAME}", companyName);
@@ -866,6 +1048,7 @@ function fillData(html, data) {
   out = safeReplaceAll(out, "{SIGNATURE}", signatureHTML);
   out = safeReplaceAll(out, "{DATE}", today);
   out = safeReplaceAll(out, "{SALESPERSON}", salesperson);
+  out = safeReplaceAll(out, "{INCENTIVES-CONTENT}", incentivesHTML);
 
   return out;
 }

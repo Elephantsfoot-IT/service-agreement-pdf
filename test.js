@@ -252,12 +252,12 @@ const tinyPng =
       quote_for: "HAMMONDCARE",
     },
 
-    chuteCleaningFrequency: "none",
-    equipmentMaintenanceFrequency: "none",
-    wasteRoomCleaningFrequency: "none",
-    odourControlFrequency: "none",
-    selfClosingHopperDoorInspectionFrequency: "none",
-    binCleaningFrequency: "none",
+    chuteCleaningFrequency: "quarterly",
+    equipmentMaintenanceFrequency: "quarterly",
+    wasteRoomCleaningFrequency: "quarterly",
+    odourControlFrequency: "quarterly",
+    selfClosingHopperDoorInspectionFrequency: "quarterly",
+    binCleaningFrequency: "quarterly",
     businessCountry: "Australia",
   };
 
