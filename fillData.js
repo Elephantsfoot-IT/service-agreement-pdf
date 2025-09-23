@@ -1,56 +1,133 @@
 // ============================================================================
-// Imports & Constants
+// Service Agreement HTML Builder – Defensive, Commented Refactor
 // ============================================================================
+// This module renders contract HTML from a data object that may have
+// missing/partial fields. All lookups are defensive and all placeholders
+// default to "" (empty string) if not provided.
+//
+// Key improvements:
+// - Safe placeholder replacement via safeReplaceAll()
+// - Defensive access with optional chaining and defaults
+// - Robust date/number formatting helpers
+// - Clear JSDoc comments for all functions
+// - No throws on missing/invalid data
+// ============================================================================
+
 const { parseISO, format, isValid } = require("date-fns");
 const { formatInTimeZone } = require("date-fns-tz");
 
+// ---------------------------------------------------------------------------
+// Constants (pure presentation defaults; tweak as needed)
+// ---------------------------------------------------------------------------
 const IMAGE_ZONE_PX = 160; // visual height reserved for signature image
-const TODAY_AU = formatInTimeZone(new Date(), "Australia/Sydney", "dd/MM/yyyy");
+const TODAY_AU = safeFormatInSydney(new Date(), "dd/MM/yyyy"); // "DD/MM/YYYY"
 const BOX_PX = 12;
 const BORDER = "black";
 const STROKE = "black";
 const STROKE_W = 2;
 
 // ============================================================================
+// Small Safe Helpers
+// ============================================================================
+
+/**
+ * Safely format a date for a given IANA time zone. Returns "" on failure.
+ * @param {Date|number|string} date
+ * @param {string} fmt
+ * @returns {string}
+ */
+function safeFormatInSydney(date, fmt) {
+  try {
+    return formatInTimeZone(date, "Australia/Sydney", fmt);
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Replace ALL occurrences of a token in a string.
+ * Falls back to original if inputs are not strings.
+ * @param {string} html
+ * @param {string} token e.g. "{COMPANY_NAME}"
+ * @param {string} value
+ * @returns {string}
+ */
+function safeReplaceAll(html, token, value = "") {
+  if (typeof html !== "string" || typeof token !== "string") return html ?? "";
+  const v = value == null ? "" : String(value);
+  return html.split(token).join(v);
+}
+
+/**
+ * Safe join with trimming and filtering falsy values.
+ * @param {Array<string|undefined|null>} parts
+ * @param {string} sep
+ * @returns {string}
+ */
+function safeJoin(parts, sep = " ") {
+  return (Array.isArray(parts) ? parts : [])
+    .map((p) => (p ?? "").toString().trim())
+    .filter(Boolean)
+    .join(sep);
+}
+
+// ============================================================================
 // Date & Number Utilities
 // ============================================================================
 
 /**
- * Format an ISO date string (YYYY-MM-DD / ISO timestamp) as DD/MM/YYYY.
+ * Format an ISO-like date string (YYYY-MM-DD / ISO timestamp) as DD/MM/YYYY.
+ * Returns "" if invalid or missing.
  * @param {string} iso
  * @returns {string}
  */
 function toDDMMYYYY(iso) {
-  if (!iso) return "";
-  const d = parseISO(iso);
-  return isValid(d) ? format(d, "dd/MM/yyyy") : "";
+  if (!iso || typeof iso !== "string") return "";
+  try {
+    const d = parseISO(iso);
+    return isValid(d) ? format(d, "dd/MM/yyyy") : "";
+  } catch {
+    return "";
+  }
 }
 
 /**
- * Convert a price-like value ("$300.00", "300", number) to a Number.
+ * Convert a price-like value ("$300.00", "300", "300,00", number) to Number.
  * Returns 0 if it cannot be parsed.
  * @param {string|number} val
  * @returns {number}
  */
 function getNumber(val) {
-  if (typeof val === "number") return val;
-  if (!val) return 0;
-  const cleaned = String(val).replace(/[^0-9.]/g, "");
-  const num = parseFloat(cleaned);
+  if (typeof val === "number" && Number.isFinite(val)) return val;
+  if (val == null) return 0;
+  // Keep digits, comma, dot; convert comma to dot only if it looks decimal.
+  const cleaned = String(val).replace(/[^0-9.,-]/g, "");
+  // If both comma and dot present, remove thousands separators (commas)
+  const normalized =
+    cleaned.includes(".") && cleaned.includes(",")
+      ? cleaned.replace(/,/g, "")
+      : cleaned.replace(",", ".");
+  const num = parseFloat(normalized);
   return Number.isFinite(num) ? num : 0;
 }
 
 /**
- * Format a number as AUD currency for display.
+ * Format a number as AUD currency. Returns "$0.00" on invalid input.
  * @param {number} n
  * @returns {string}
  */
 function formatMoney(n) {
-  return n.toLocaleString("en-AU", {
-    style: "currency",
-    currency: "AUD",
-    minimumFractionDigits: 2,
-  });
+  const safe = Number.isFinite(n) ? n : 0;
+  try {
+    return safe.toLocaleString("en-AU", {
+      style: "currency",
+      currency: "AUD",
+      minimumFractionDigits: 2,
+    });
+  } catch {
+    // Fallback if locale options unavailable in environment
+    return `$${safe.toFixed(2)}`;
+  }
 }
 
 // ============================================================================
@@ -62,32 +139,43 @@ function formatMoney(n) {
  * - < 3 => 0%
  * - 4–5 => 5%
  * - >= 6 => 10%
- * Adjust as needed.
  * @param {number} serviceCount
  * @returns {number} percentage (0, 5, 10)
  */
 function getDiscountDefault(serviceCount) {
-  if (serviceCount < 3) return 0;
-  if (serviceCount >= 4 && serviceCount < 6) return 5;
-  if (serviceCount >= 6) return 10;
+  const c = Number.isFinite(serviceCount) ? serviceCount : 0;
+  if (c < 3) return 0;
+  if (c >= 4 && c < 6) return 5;
+  if (c >= 6) return 10;
   return 0;
 }
 
 /**
+ * Get multiplier for frequency.
+ * @param {string|null|undefined} frequency
+ * @returns {number} 4 (quarterly), 2 (six-monthly), 1 (yearly), or 0 if missing
+ */
+function frequencyToMultiplier(frequency) {
+  const f = (frequency ?? "").toString().trim().toLowerCase();
+  
+  if (!f) return 0;
+  if (f === "none") return 0;
+  if (f === "yearly") return 1;
+  if (f === "six-monthly" || f === "6monthly" || f === "six monthly") return 2;
+  // Default to quarterly if something is provided but not matched
+  return 4;
+}
+
+/**
  * Annualized cost helper for all services except odour-control.
- * Frequency: "quarterly" => 4, "six-monthly" => 2, "yearly" => 1
  * @param {Array} services
- * @param {string|null} frequency
+ * @param {string|null|undefined} frequency
  * @returns {number}
  */
 function getServiceAnualCost(services, frequency) {
-  if (!frequency) return 0;
-  const frequencyValue =
-    frequency === "yearly" ? 1 : frequency === "six-monthly" ? 2 : 4; // default to quarterly
-  return (services || []).reduce(
-    (acc, s) => acc + getNumber(s.price) * frequencyValue,
-    0
-  );
+  const mult = frequencyToMultiplier(frequency);
+  if (!mult || !Array.isArray(services) || services.length === 0) return 0;
+  return services.reduce((acc, s) => acc + getNumber(s?.price) * mult, 0);
 }
 
 /**
@@ -98,15 +186,16 @@ function getServiceAnualCost(services, frequency) {
  * @returns {{ type: string, items: Array }}
  */
 function getServices(sites, type) {
-  const items = (sites || []).flatMap((site) =>
-    (site.buildings || []).flatMap((b) =>
-      (b.services || [])
+  if (!Array.isArray(sites) || !type) return { type, items: [] };
+  const items = sites.flatMap((site) =>
+    (site?.buildings ?? []).flatMap((b) =>
+      (b?.services ?? [])
         .filter((s) => s && s.type === type)
         .map((s) => ({
-          site_name: site.site_name,
-          site_id: site.simpro_site_id,
-          building_id: b.id,
-          building_name: b.name || null,
+          site_name: site?.site_name ?? "",
+          site_id: site?.simpro_site_id ?? null,
+          building_id: b?.id ?? null,
+          building_name: b?.name || null,
           ...s,
         }))
     )
@@ -116,7 +205,8 @@ function getServices(sites, type) {
 
 /**
  * Compute the grand total for all services with optional discount.
- * Odour control = sum(units * unitPrice) ONLY if odour frequency is selected.
+ * Odour control = sum(units * unitPrice * frequencyMultiplier) ONLY if
+ * odour frequency is selected.
  * @param {Object} params
  * @param {Array}  params.sites
  * @param {Object} params.frequencies
@@ -130,14 +220,16 @@ function computeGrandTotal({
   odourControlUnits = {},
   getDiscount = getDiscountDefault,
 }) {
-  const {
-    chuteCleaningFrequency,
-    equipmentMaintenanceFrequency,
-    selfClosingHopperDoorInspectionFrequency,
-    wasteRoomCleaningFrequency,
-    binCleaningFrequency,
-    odourControlFrequency,
-  } = frequencies;
+  // Pull frequencies defensively
+  const chuteCleaningFrequency = frequencies?.chuteCleaningFrequency ?? null;
+  const equipmentMaintenanceFrequency =
+    frequencies?.equipmentMaintenanceFrequency ?? null;
+  const selfClosingHopperDoorInspectionFrequency =
+    frequencies?.selfClosingHopperDoorInspectionFrequency ?? null;
+  const wasteRoomCleaningFrequency =
+    frequencies?.wasteRoomCleaningFrequency ?? null;
+  const binCleaningFrequency = frequencies?.binCleaningFrequency ?? null;
+  const odourControlFrequency = frequencies?.odourControlFrequency ?? null;
 
   // Collect services by type
   const chute = getServices(sites, "chute_cleaning");
@@ -147,7 +239,7 @@ function computeGrandTotal({
   const bin = getServices(sites, "bin_cleaning");
   const odour = getServices(sites, "odour_control");
 
-  // Annual totals (per your rules)
+  // Annual totals (per rules)
   const chuteAnnual = getServiceAnualCost(chute.items, chuteCleaningFrequency);
   const equipAnnual = getServiceAnualCost(
     equip.items,
@@ -163,12 +255,12 @@ function computeGrandTotal({
   );
   const binAnnual = getServiceAnualCost(bin.items, binCleaningFrequency);
 
-  // Odour control = sum(qty * unitPrice) if frequency is selected
-  const odourAnnual = odourControlFrequency
+  // Odour control = sum(qty * unitPrice * frequencyMultiplier) if frequency set
+  const odourMult = frequencyToMultiplier(odourControlFrequency);
+  const odourAnnual = odourMult
     ? (odour.items || []).reduce((acc, r) => {
-      const frequencyValue =odourControlFrequency === "yearly" ? 1 : odourControlFrequency === "six-monthly" ? 2 : 4;
-        const qty = odourControlUnits[r.id] || 0;
-        return acc + qty * getNumber(r.price) * frequencyValue;
+        const qty = getNumber(odourControlUnits?.[r?.id] ?? 0);
+        return acc + qty * getNumber(r?.price) * odourMult;
       }, 0)
     : 0;
 
@@ -188,11 +280,12 @@ function computeGrandTotal({
     wasteRoomCleaningFrequency,
     binCleaningFrequency,
     odourControlFrequency,
-  ].filter((f) => f != null && f !== "").length;
+  ].filter((f) => f != null && String(f).trim() !== "").length;
 
-  const discountPct = getDiscount(Number(serviceCount)) || 0;
+  const discountPct = Number(getDiscount(Number(serviceCount))) || 0;
   const discountAmt = discountPct ? (subtotal * discountPct) / 100 : 0;
 
+  // Never negative
   return Math.max(0, subtotal - discountAmt);
 }
 
@@ -202,24 +295,25 @@ function computeGrandTotal({
 
 /**
  * Flatten site names (one per building entry). Keeps duplicates if the same
- * site appears multiple times (as in your original logic).
+ * site appears multiple times (mirrors the original logic).
  * @param {Array} sites
  * @returns {string[]}
  */
 function getSitesNames(sites) {
   if (!Array.isArray(sites)) return [];
   return sites.flatMap((site) =>
-    (site.buildings ?? []).flatMap(() => site.site_name)
+    (site?.buildings ?? []).flatMap(() => site?.site_name ?? "")
   );
 }
 
 /**
- * Build the cover-page list of site names as HTML.
+ * Build the cover-page list of site names as HTML (defensive).
  * @param {Array} sites
  * @returns {string}
  */
 function getCoverPageSitesNames(sites) {
   const siteNames = getSitesNames(sites)
+    .filter(Boolean)
     .map((site) => `<div style="font-size:14px;">${site}</div>`)
     .join("");
 
@@ -239,335 +333,17 @@ function getChuteCleaningServices(sites, type) {
   return getServices(sites, type).items || [];
 }
 
-// -- Waste Chute Cleaning -----------------------------------------------------
-const getChuteCleaningContent = (sites, frequency) => {
-  if (frequency === null) return "";
-  const services = getChuteCleaningServices(sites, "chute_cleaning");
-  if (!services.length) return "";
-
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      return `
-        <div
-          class="avoid-break"
-          style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
-          "
-        >
-          <div><b>${service.site_name}${
-        service.building_name ? " - " + service.building_name : ""
-      }</b></div>
-          <div>${service.chutes} Chutes</div>
-          <div>$${service.price} + GST (Per Chute)</div>
-          <div><b>(Up to ${service.levels} Levels)</b></div>
-          <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
-        </div>
-      `;
-    })
-    .join("");
-
-  return `
-    <div class="service-section"
-         style="border:1px solid black; border-top:none;">
-      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        <b>Waste Chute Cleaning</b>
-      </div>
-      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        Quarterly
-      </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
-        ${items}
-      </div>
-      ${frequencyChecklistHTML(frequency, {
-        visible: ["quarterly", "yearly", "six-monthly"],
-      })}
-    </div>
-  `;
-};
-
-// -- Equipment Preventative Maintenance --------------------------------------
-const getEquipmentContent = (sites, frequency) => {
-  if (frequency === null) return "";
-  const services = getChuteCleaningServices(sites, "equipment_maintenance");
-  if (!services.length) return "";
-
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      return `
-        <div
-          class="avoid-break"
-          style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
-          "
-        >
-          <div><b>${service.site_name}${
-        service.building_name ? " - " + service.building_name : ""
-      }</b></div>
-          <div style="text-transform:uppercase;"><b>${
-            service.equipment_label ? service.equipment_label + ":" : ""
-          }</b> $${service.price} + GST</div>
-          <div><b>(Per System)</b></div>
-        </div>
-      `;
-    })
-    .join("");
-
-  return `
-    <div class="service-section" style="border:1px solid black;">
-      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        <b>Equipment Preventative<br/>Maintenance</b>
-      </div>
-      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        Quarterly
-      </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
-        ${items}
-      </div>
-       ${frequencyChecklistHTML(frequency, {
-         visible: ["quarterly", "yearly", "six-monthly"],
-       })}
-    </div>
-  `;
-};
-
-// -- Self-Closing Hopper Door Inspection -------------------------------------
-const getDoorInspectionContent = (sites, frequency) => {
-  if (frequency === null) return "";
-  const services = getChuteCleaningServices(sites, "hopper_door_inspection");
-  if (!services.length) return "";
-
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      return `
-        <div
-          class="avoid-break"
-          style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
-          "
-        >
-          <div><b>${service.site_name}${
-        service.building_name ? " - " + service.building_name : ""
-      }</b></div>
-          <div>$${service.price} + GST</div>
-        </div>
-      `;
-    })
-    .join("");
-
-  return `
-    <div class="service-section" style="border:1px solid black;">
-      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        <b>Self-Closing Hopper Door<br/>Inspection</b>
-      </div>
-      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        Quarterly
-      </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
-        ${items}
-      </div>
-      ${frequencyChecklistHTML(frequency, {
-        visible: ["quarterly", "yearly", "six-monthly"],
-      })}
-    </div>
-  `;
-};
-
-// -- Waste Room High Pressure Clean ------------------------------------------
-const getWasteRoomCleanContent = (sites, frequency) => {
-  if (frequency === null) return "";
-  const services = getChuteCleaningServices(sites, "waste_room_pressure_clean");
-  if (!services.length) return "";
-
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      return `
-        <div
-          class="avoid-break"
-          style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
-          "
-        >
-          <div><b>${service.site_name}${
-        service.building_name ? " - " + service.building_name : ""
-      }</b></div>
-          <div>$${service.price} + GST</div>
-          <div><b>${service.area_label}</b></div>
-          <div><b>(Per Waste Room)</b></div>
-        </div>
-      `;
-    })
-    .join("");
-
-  return `
-    <div class="service-section" style="border:1px solid black;">
-      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        <b>Waste Room High Pressure<br/>Clean</b>
-      </div>
-      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        Quarterly
-      </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
-        ${items}
-      </div>
-     ${frequencyChecklistHTML(frequency, {
-       visible: ["quarterly", "yearly", "six-monthly"],
-     })}
-    </div>
-  `;
-};
-
-// -- Wheelie Bin Cleaning -----------------------------------------------------
-const getWasteBinCleanContent = (sites, frequency) => {
-  if (frequency === null) return "";
-  const services = getChuteCleaningServices(sites, "bin_cleaning");
-  if (!services.length) return "";
-
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      return `
-        <div
-          class="avoid-break"
-          style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
-          "
-        >
-          <div><b>${service.site_name}${
-        service.building_name ? " - " + service.building_name : ""
-      }</b></div>
-          <div>$${service.price} + GST</div>
-        </div>
-      `;
-    })
-    .join("");
-
-  return `
-    <div class="service-section" style="border:1px solid black;">
-      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        <b>Wheelie Bin Cleaning</b>
-      </div>
-      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        Quarterly
-      </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
-        ${items}
-      </div>
-      ${frequencyChecklistHTML(frequency, {
-        visible: ["quarterly", "yearly", "six-monthly"],
-      })}
-    </div>
-  `;
-};
-
-// -- Odour Control ------------------------------------------------------------
-const getOdourControlContent = (sites, frequency, units) => {
-  if (frequency === null) return "";
-  const services = getChuteCleaningServices(sites, "odour_control");
-  if (!services.length) return "";
-
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      const unit = units[service.id];
-      return `
-        <div
-          class="avoid-break"
-          style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
-          "
-        >
-          <div><b>${service.site_name}${
-        service.building_name ? " - " + service.building_name : ""
-      }</b></div>
-          <div>$${service.price} + GST</div>
-          <div>(Per Unit, No Installation cost. Min 2 year contract)</div>
-          <div><b>*240V 10AMP Outlet Must be Supplied in Waste Room</b></div>
-          <div style="display:flex; flex-direction:row; align-items:center; gap:10px;">
-            <div style="width:55px; height:30px; border:1px solid black; display: flex; justify-content: center; align-items: center; font-weight: bold;">${unit}</div>
-            <div>UNITS</div>
-          </div>
-        </div>
-      `;
-    })
-    .join("");
-
-  return `
-    <div class="service-section" style="border:1px solid black;">
-      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        <b>EF Neutraliser <br/><br/>(Odour Management System)</b>
-      </div>
-      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
-        Quarterly
-      </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
-        ${items}
-      </div>
-      ${frequencyChecklistHTML(frequency, {
-        visible: ["quarterly"],
-      })}
-    </div>
-  `;
-};
-
 /**
- * Render a 3-option frequency checklist, ticking exactly one based on `frequency`.
- * You can hide rows with `hide: [...]` or explicitly set which to show via `visible: [...]`.
- *
- * @param {string|null|undefined} frequency - "quarterly" | "six-monthly" | "yearly" (case/space tolerant)
+ * Common frequency checklist builder (defensive)
+ * @param {string|null|undefined} frequency
  * @param {Object} [opts]
- * @param {string[]} [opts.hide]    - e.g. ["yearly"]           -> hide these rows
- * @param {string[]} [opts.visible] - e.g. ["quarterly","yearly"] -> only show these rows
- * @returns {string} HTML
+ * @param {string[]} [opts.hide]
+ * @param {string[]} [opts.visible]
+ * @returns {string}
  */
 function frequencyChecklistHTML(frequency, opts = {}) {
   const norm = (s) =>
-    (s || "").toString().trim().toLowerCase().replace(/\s+/g, "-");
+    (s ?? "").toString().trim().toLowerCase().replace(/\s+/g, "-");
 
   const f = norm(frequency);
   const isQuarterly = f === "quarterly";
@@ -637,6 +413,340 @@ function frequencyChecklistHTML(frequency, opts = {}) {
   `;
 }
 
+// -- Waste Chute Cleaning -----------------------------------------------------
+const getChuteCleaningContent = (sites, frequency) => {
+  if (frequency == null) return "";
+  const services = getChuteCleaningServices(sites, "chute_cleaning");
+  if (!services.length) return "";
+
+  const items = services
+    .map((service, i, arr) => {
+      const isLast = i === arr.length - 1;
+      const price = getNumber(service?.price);
+      const chutes = service?.chutes ?? "";
+      const levels = service?.levels ?? "";
+      const siteName = service?.site_name ?? "";
+      const bName = service?.building_name ? ` - ${service.building_name}` : "";
+      return `
+        <div
+          class="avoid-break"
+          style="
+            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            padding-right:10px;
+            padding-left:10px;
+            padding-bottom:10px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:10px;
+          "
+        >
+          <div><b>${siteName}${bName}</b></div>
+          <div>${chutes ? `${chutes} Chutes` : ""}</div>
+          <div>${price ? `$${price} + GST (Per Chute)` : ""}</div>
+          <div><b>${levels ? `(Up to ${levels} Levels)` : ""}</b></div>
+          <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="service-section"
+         style="border:1px solid black; border-top:none;">
+      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        <b>Waste Chute Cleaning</b>
+      </div>
+      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        Quarterly
+      </div>
+      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+        ${items}
+      </div>
+      ${frequencyChecklistHTML(frequency, {
+        visible: ["quarterly", "yearly", "six-monthly"],
+      })}
+    </div>
+  `;
+};
+
+// -- Equipment Preventative Maintenance --------------------------------------
+const getEquipmentContent = (sites, frequency) => {
+  if (frequency == null) return "";
+  const services = getChuteCleaningServices(sites, "equipment_maintenance");
+  if (!services.length) return "";
+
+  const items = services
+    .map((service, i, arr) => {
+      const isLast = i === arr.length - 1;
+      const price = getNumber(service?.price);
+      const label = service?.equipment_label
+        ? `${service.equipment_label.toUpperCase()}:`
+        : "";
+      const siteName = service?.site_name ?? "";
+      const bName = service?.building_name ? ` - ${service.building_name}` : "";
+      return `
+        <div
+          class="avoid-break"
+          style="
+            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            padding-right:10px;
+            padding-left:10px;
+            padding-bottom:10px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:10px;
+          "
+        >
+          <div><b>${siteName}${bName}</b></div>
+          <div style="text-transform:uppercase;"><b>${label}</b> ${
+        price ? `$${price} + GST` : ""
+      }</div>
+          <div><b>(Per System)</b></div>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="service-section" style="border:1px solid black;">
+      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        <b>Equipment Preventative<br/>Maintenance</b>
+      </div>
+      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        Quarterly
+      </div>
+      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+        ${items}
+      </div>
+       ${frequencyChecklistHTML(frequency, {
+         visible: ["quarterly", "yearly", "six-monthly"],
+       })}
+    </div>
+  `;
+};
+
+// -- Self-Closing Hopper Door Inspection -------------------------------------
+const getDoorInspectionContent = (sites, frequency) => {
+  if (frequency == null) return "";
+  const services = getChuteCleaningServices(sites, "hopper_door_inspection");
+  if (!services.length) return "";
+
+  const items = services
+    .map((service, i, arr) => {
+      const isLast = i === arr.length - 1;
+      const price = getNumber(service?.price);
+      const siteName = service?.site_name ?? "";
+      const bName = service?.building_name ? ` - ${service.building_name}` : "";
+      return `
+        <div
+          class="avoid-break"
+          style="
+            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            padding-right:10px;
+            padding-left:10px;
+            padding-bottom:10px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:10px;
+          "
+        >
+          <div><b>${siteName}${bName}</b></div>
+          <div>${price ? `$${price} + GST` : ""}</div>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="service-section" style="border:1px solid black;">
+      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        <b>Self-Closing Hopper Door<br/>Inspection</b>
+      </div>
+      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        Quarterly
+      </div>
+      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+        ${items}
+      </div>
+      ${frequencyChecklistHTML(frequency, {
+        visible: ["quarterly", "yearly", "six-monthly"],
+      })}
+    </div>
+  `;
+};
+
+// -- Waste Room High Pressure Clean ------------------------------------------
+const getWasteRoomCleanContent = (sites, frequency) => {
+  if (frequency == null) return "";
+  const services = getChuteCleaningServices(sites, "waste_room_pressure_clean");
+  if (!services.length) return "";
+
+  const items = services
+    .map((service, i, arr) => {
+      const isLast = i === arr.length - 1;
+      const price = getNumber(service?.price);
+      const areaLabel = service?.area_label ?? "";
+      const siteName = service?.site_name ?? "";
+      const bName = service?.building_name ? ` - ${service.building_name}` : "";
+      return `
+        <div
+          class="avoid-break"
+          style="
+            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            padding-right:10px;
+            padding-left:10px;
+            padding-bottom:10px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:10px;
+          "
+        >
+          <div><b>${siteName}${bName}</b></div>
+          <div>${price ? `$${price} + GST` : ""}</div>
+          <div><b>${areaLabel}</b></div>
+          <div><b>(Per Waste Room)</b></div>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="service-section" style="border:1px solid black;">
+      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        <b>Waste Room High Pressure<br/>Clean</b>
+      </div>
+      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        Quarterly
+      </div>
+      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+        ${items}
+      </div>
+     ${frequencyChecklistHTML(frequency, {
+       visible: ["quarterly", "yearly", "six-monthly"],
+     })}
+    </div>
+  `;
+};
+
+// -- Odour Control ------------------------------------------------------------
+const getOdourControlContent = (sites, frequency, units) => {
+  if (frequency == null) return "";
+  const services = getChuteCleaningServices(sites, "odour_control");
+  if (!services.length) return "";
+
+  const items = services
+    .map((service, i, arr) => {
+      const isLast = i === arr.length - 1;
+      const price = getNumber(service?.price);
+      const siteName = service?.site_name ?? "";
+      const bName = service?.building_name ? ` - ${service.building_name}` : "";
+      const unit = getNumber(units?.[service?.id] ?? "");
+      return `
+        <div
+          class="avoid-break"
+          style="
+            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            padding-right:10px;
+            padding-left:10px;
+            padding-bottom:10px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:10px;
+          "
+        >
+          <div><b>${siteName}${bName}</b></div>
+          <div>${price ? `$${price} + GST` : ""}</div>
+          <div>(Per Unit, No Installation cost. Min 2 year contract)</div>
+          <div><b>*240V 10AMP Outlet Must be Supplied in Waste Room</b></div>
+          <div style="display:flex; flex-direction:row; align-items:center; gap:10px;">
+            <div style="width:55px; height:30px; border:1px solid black; display: flex; justify-content: center; align-items: center; font-weight: bold;">${
+              unit || ""
+            }</div>
+            <div>UNITS</div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="service-section" style="border:1px solid black;">
+      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        <b>EF Neutraliser <br/><br/>(Odour Management System)</b>
+      </div>
+      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        Quarterly
+      </div>
+      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+        ${items}
+      </div>
+      ${frequencyChecklistHTML(frequency, { visible: ["quarterly"] })}
+    </div>
+  `;
+};
+// -- Wheelie Bin Cleaning -----------------------------------------------------
+/**
+ * Render the Wheelie Bin Cleaning section.
+ * Defensive: returns "" if frequency is null/undefined or no services exist.
+ * @param {Array} sites
+ * @param {string|null|undefined} frequency
+ * @returns {string}
+ */
+const getWasteBinCleanContent = (sites, frequency) => {
+  if (frequency == null) return "";
+  const services = getChuteCleaningServices(sites, "bin_cleaning");
+  if (!services.length) return "";
+
+  const items = services
+    .map((service, i, arr) => {
+      const isLast = i === arr.length - 1;
+      const price = getNumber(service?.price);
+      const siteName = service?.site_name ?? "";
+      const bName = service?.building_name ? ` - ${service.building_name}` : "";
+      return `
+        <div
+          class="avoid-break"
+          style="
+            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            padding-right:10px;
+            padding-left:10px;
+            padding-bottom:10px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:10px;
+          "
+        >
+          <div><b>${siteName}${bName}</b></div>
+          <div>${price ? `$${price} + GST` : ""}</div>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="service-section" style="border:1px solid black;">
+      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        <b>Wheelie Bin Cleaning</b>
+      </div>
+      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        Quarterly
+      </div>
+      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+        ${items}
+      </div>
+      ${frequencyChecklistHTML(frequency, {
+        visible: ["quarterly", "yearly", "six-monthly"],
+      })}
+    </div>
+  `;
+};
+
 // ============================================================================
 // Main Templating – fillData()
 // ============================================================================
@@ -647,110 +757,114 @@ function frequencyChecklistHTML(frequency, opts = {}) {
  * {START_DATE}, {END_DATE}, {CONTRACT_TOTAL}, {SERVICE-CONTENT},
  * {SITE_NAME}, {NAME}, {SIGNATURE}, {DATE}
  *
+ * All replacements are defensive; missing data produces "".
+ *
  * @param {string} html
  * @param {Object} data
  * @returns {string}
  */
 function fillData(html, data) {
-  let returnHTML = html;
+  const d = data ?? {};
 
-  // -- Company basics
-  returnHTML = returnHTML.replace("{COMPANY_NAME}", data.companyName);
-  returnHTML = returnHTML.replace("{ABN}", data.abn);
-  returnHTML = returnHTML.replace(
-    "{ADDRESS}",
-    `${data.businessStreetAddress}, ${data.businessCity} ${data.businessPostcode} ${data.businessState}, Australia`
+  // Company basics
+  const companyName = d?.companyName ?? "";
+  const abn = d?.abn ?? "";
+  const address = safeJoin(
+    [
+      d?.businessStreetAddress,
+      d?.businessCity,
+      d?.businessPostcode,
+      d?.businessState,
+      "Australia",
+    ],
+    ", "
   );
-  returnHTML = returnHTML.replace("{ACCOUNTS_EMAILS}", data.accountEmail);
+  const accountsEmail = d?.accountEmail ?? "";
 
-  // -- Phones (conditionally show Mobile/Phone)
-  const phoneLine = [
-    data?.accountMobile?.trim() && `Mobile: ${data.accountMobile.trim()}`,
-    data?.accountPhone?.trim() && `Phone: ${data.accountPhone.trim()}`,
-  ]
-    .filter(Boolean)
-    .join(" | ");
-  returnHTML = returnHTML.replace("{ACCOUNT_PHONE}", phoneLine || "");
-
-  // -- Dates
-  returnHTML = returnHTML.replace(
-    "{START_DATE}",
-    toDDMMYYYY(data.serviceAgreement.start_date) || ""
-  );
-  returnHTML = returnHTML.replace(
-    "{END_DATE}",
-    toDDMMYYYY(data.serviceAgreement.end_date) || ""
+  // Phones (conditionally show Mobile/Phone, joined with " | ")
+  const phoneLine = safeJoin(
+    [
+      d?.accountMobile?.trim()
+        ? `Mobile: ${d.accountMobile.trim()}`
+        : undefined,
+      d?.accountPhone?.trim() ? `Phone: ${d.accountPhone.trim()}` : undefined,
+    ],
+    " | "
   );
 
-  // -- Totals (grand total for entire contract * 2, per your original)
+  // Dates
+  const startDate = toDDMMYYYY(d?.serviceAgreement?.start_date ?? "");
+  const endDate = toDDMMYYYY(d?.serviceAgreement?.end_date ?? "");
+
+  // Totals (grand total for entire contract * 2, per original)
   const grand = computeGrandTotal({
-    sites: data.serviceAgreement?.sites || [],
+    sites: d?.serviceAgreement?.sites || [],
     frequencies: {
-      chuteCleaningFrequency: data.chuteCleaningFrequency,
-      equipmentMaintenanceFrequency: data.equipmentMaintenanceFrequency,
+      chuteCleaningFrequency: d?.chuteCleaningFrequency ?? null,
+      equipmentMaintenanceFrequency: d?.equipmentMaintenanceFrequency ?? null,
       selfClosingHopperDoorInspectionFrequency:
-        data.selfClosingHopperDoorInspectionFrequency,
-      wasteRoomCleaningFrequency: data.wasteRoomCleaningFrequency,
-      binCleaningFrequency: data.binCleaningFrequency,
-      odourControlFrequency: data.odourControlFrequency,
+        d?.selfClosingHopperDoorInspectionFrequency ?? null,
+      wasteRoomCleaningFrequency: d?.wasteRoomCleaningFrequency ?? null,
+      binCleaningFrequency: d?.binCleaningFrequency ?? null,
+      odourControlFrequency: d?.odourControlFrequency ?? null,
     },
-    odourControlUnits: data.odourControlUnits || {},
+    odourControlUnits: d?.odourControlUnits || {},
     getDiscount: getDiscountDefault,
   });
-  returnHTML = returnHTML.replace("{CONTRACT_TOTAL}", formatMoney(grand * 2));
+  const contractTotal = (grand === 0 || !grand) ? "" : formatMoney(grand * 2);
 
-  // -- Service sections
+  // Service sections (each builder is defensive)
+  const sites = d?.serviceAgreement?.sites || [];
   const servicesHTML =
-    getChuteCleaningContent(
-      data.serviceAgreement.sites,
-      data.chuteCleaningFrequency
-    ) +
-    getEquipmentContent(
-      data.serviceAgreement.sites,
-      data.equipmentMaintenanceFrequency
-    ) +
+    getChuteCleaningContent(sites, d?.chuteCleaningFrequency ?? null) +
+    getEquipmentContent(sites, d?.equipmentMaintenanceFrequency ?? null) +
     getDoorInspectionContent(
-      data.serviceAgreement.sites,
-      data.selfClosingHopperDoorInspectionFrequency
+      sites,
+      d?.selfClosingHopperDoorInspectionFrequency ?? null
     ) +
-    getWasteRoomCleanContent(
-      data.serviceAgreement.sites,
-      data.wasteRoomCleaningFrequency
-    ) +
-    getWasteBinCleanContent(
-      data.serviceAgreement.sites,
-      data.binCleaningFrequency
-    ) +
+    getWasteRoomCleanContent(sites, d?.wasteRoomCleaningFrequency ?? null) +
+    getWasteBinCleanContent(sites, d?.binCleaningFrequency ?? null) +
     getOdourControlContent(
-      data.serviceAgreement.sites,
-      data.odourControlFrequency,
-      data.odourControlUnits
+      sites,
+      d?.odourControlFrequency ?? null,
+      d?.odourControlUnits || {}
     );
 
-  returnHTML = returnHTML.replace("{SERVICE-CONTENT}", servicesHTML);
+  // Cover page site names
+  const siteNamesHTML = getCoverPageSitesNames(sites);
 
-  // -- Cover page site names
-  returnHTML = returnHTML.replace(
-    "{SITE_NAME}",
-    getCoverPageSitesNames(data.serviceAgreement.sites)
-  );
-
-  // -- Signatory
-  returnHTML = returnHTML.replace("{NAME}", data.signFullName || "");
+  // Signatory
+  const signName = d?.signFullName ?? "";
+  const trimmedDataURL = d?.trimmedDataURL ?? "";
 
   // Signature box (image scaled to fit within fixed-height area)
-  const signatureHTML = data.trimmedDataURL
+  const signatureHTML = trimmedDataURL
     ? `<div style="height:${IMAGE_ZONE_PX}px; display:flex; align-items:center; justify-content:flex-start;">
-         <img src="${data.trimmedDataURL}" alt="Signature"
+         <img src="${trimmedDataURL}" alt="Signature"
               style="display:block; max-height:100%; max-width:100%; height:auto; width:auto; object-fit:contain;" />
        </div>`
     : `<div style="height:${IMAGE_ZONE_PX}px;"></div>`;
-  returnHTML = returnHTML.replace("{SIGNATURE}", signatureHTML);
 
-  // -- Today (AU)
-  returnHTML = returnHTML.replace("{DATE}", TODAY_AU);
+  // Today (AU)
+  const today = TODAY_AU;
 
-  return returnHTML;
+  // Perform safe replacements
+  let out = String(html ?? "");
+  out = safeReplaceAll(out, "{COMPANY_NAME}", companyName);
+  out = safeReplaceAll(out, "{ABN}", abn);
+  out = safeReplaceAll(out, "{ADDRESS}", address);
+  out = safeReplaceAll(out, "{ACCOUNTS_EMAILS}", accountsEmail);
+  out = safeReplaceAll(out, "{ACCOUNT_PHONE}", phoneLine);
+  out = safeReplaceAll(out, "{START_DATE}", startDate);
+  out = safeReplaceAll(out, "{END_DATE}", endDate);
+  out = safeReplaceAll(out, "{CONTRACT_TOTAL}", contractTotal);
+  out = safeReplaceAll(out, "{SERVICE-CONTENT}", servicesHTML);
+  out = safeReplaceAll(out, "{SITE_NAME}", siteNamesHTML);
+  out = safeReplaceAll(out, "{NAME}", signName);
+  out = safeReplaceAll(out, "{SIGNATURE}", signatureHTML);
+  out = safeReplaceAll(out, "{DATE}", today);
+
+  return out;
 }
 
 // ============================================================================
@@ -758,7 +872,7 @@ function fillData(html, data) {
 // ============================================================================
 module.exports = {
   fillData,
-  // exporting helpers too (handy for tests)
+  // exporting helpers too (handy for tests or reuse)
   toDDMMYYYY,
   formatMoney,
   getNumber,
@@ -766,4 +880,5 @@ module.exports = {
   getServiceAnualCost,
   getDiscountDefault,
   computeGrandTotal,
+  frequencyChecklistHTML, // exported for testing if needed
 };
