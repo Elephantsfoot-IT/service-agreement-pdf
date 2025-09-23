@@ -250,6 +250,7 @@ const tinyPng =
       },
       quote_for: "HAMMONDCARE",
     },
+    salesperson:"Khang",
     chuteCleaningFrequency: "quarterly",
     equipmentMaintenanceFrequency: "six-monthly",
     wasteRoomCleaningFrequency: "six-monthly",

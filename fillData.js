@@ -837,6 +837,8 @@ function fillData(html, data) {
   const signName = d?.signFullName ?? "";
   const trimmedDataURL = d?.trimmedDataURL ?? "";
 
+  const salesperson = d?.salesperson ?? "";
+
   // Signature box (image scaled to fit within fixed-height area)
   const signatureHTML = trimmedDataURL
     ? `<div style="height:${IMAGE_ZONE_PX}px; display:flex; align-items:center; justify-content:flex-start;">
@@ -863,6 +865,7 @@ function fillData(html, data) {
   out = safeReplaceAll(out, "{NAME}", signName);
   out = safeReplaceAll(out, "{SIGNATURE}", signatureHTML);
   out = safeReplaceAll(out, "{DATE}", today);
+  out = safeReplaceAll(out, "{SALESPERSON}", salesperson);
 
   return out;
 }
