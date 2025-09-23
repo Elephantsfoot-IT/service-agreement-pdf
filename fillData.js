@@ -665,7 +665,7 @@ const getOdourControlContent = (sites, frequency, units) => {
           <div><b>*240V 10AMP Outlet Must be Supplied in Waste Room</b></div>
           <div style="display:flex; flex-direction:row; align-items:center; gap:10px;">
             <div style="width:55px; height:30px; border:1px solid black; display: flex; justify-content: center; align-items: center; font-weight: bold;">${
-              unit || ""
+              frequency == "none" ? "" : (unit || "")
             }</div>
             <div>UNITS</div>
           </div>
@@ -775,7 +775,7 @@ function fillData(html, data) {
       d?.businessCity,
       d?.businessPostcode,
       d?.businessState,
-      "Australia",
+      (d?.businessStreetAddress&& d?.businessCity&& d?.businessPostcode && d?.businessState) ? "Australia" : "",
     ],
     ", "
   );
@@ -837,7 +837,7 @@ function fillData(html, data) {
   const signName = d?.signFullName ?? "";
   const trimmedDataURL = d?.trimmedDataURL ?? "";
 
-  const salesperson = d?.salesperson ?? "";
+  const salesperson = d?.serviceAgreement?.salesperson ?? "";
 
   // Signature box (image scaled to fit within fixed-height area)
   const signatureHTML = trimmedDataURL

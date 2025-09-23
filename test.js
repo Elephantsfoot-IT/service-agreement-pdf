@@ -52,6 +52,7 @@ const tinyPng =
     },
     additionalContacts: [],
     serviceAgreement: {
+      salesperson:"Khang",
       id: "8150f543-a97a-44b2-93c7-924e00d65466",
       created_at: "2025-09-22T16:22:50+00:00",
       simpro_customer_id: "98",
@@ -250,13 +251,13 @@ const tinyPng =
       },
       quote_for: "HAMMONDCARE",
     },
-    salesperson:"Khang",
-    chuteCleaningFrequency: "quarterly",
-    equipmentMaintenanceFrequency: "six-monthly",
-    wasteRoomCleaningFrequency: "six-monthly",
-    odourControlFrequency: "quarterly",
-    selfClosingHopperDoorInspectionFrequency: "quarterly",
-    binCleaningFrequency: "quarterly",
+
+    chuteCleaningFrequency: "none",
+    equipmentMaintenanceFrequency: "none",
+    wasteRoomCleaningFrequency: "none",
+    odourControlFrequency: "none",
+    selfClosingHopperDoorInspectionFrequency: "none",
+    binCleaningFrequency: "none",
     businessCountry: "Australia",
   };
 
