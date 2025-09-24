@@ -227,7 +227,7 @@ const tinyPng =
       expire_at: "2025-10-27T17:22:18",
       start_date: "2025-09-22",
       end_date: "2027-09-22",
-      incentives: true,
+      incentives: false,
       company_details: {
         abn: "48000026219",
         companyName: "HAMMONDCARE",

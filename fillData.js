@@ -219,6 +219,7 @@ function computeGrandTotal({
   frequencies = {},
   odourControlUnits = {},
   getDiscount = getDiscountDefault,
+  incentives
 }) {
   // Pull frequencies defensively
   const chuteCleaningFrequency = frequencies?.chuteCleaningFrequency ?? null;
@@ -283,7 +284,7 @@ function computeGrandTotal({
   ].filter((f) => f != null && String(f).trim() !== "" && String(f).trim() !== "none").length;
 
   const discountPct = Number(getDiscount(Number(serviceCount))) || 0;
-  const discountAmt = discountPct ? (subtotal * discountPct) / 100 : 0;
+  const discountAmt =( discountPct && incentives) ? (subtotal * discountPct) / 100 : 0;
 
   // Never negative
   return Math.max(0, subtotal - discountAmt);
@@ -977,6 +978,7 @@ function fillData(html, data) {
     },
     odourControlUnits: d?.odourControlUnits || {},
     getDiscount: getDiscountDefault,
+    incentives: d?.serviceAgreement?.incentives ?? null,
   });
   const contractTotal = grand === 0 || !grand ? "" : formatMoney(grand * 2);
 
