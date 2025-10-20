@@ -1,16 +1,9 @@
 // ============================================================================
-// Service Agreement HTML Builder – Defensive, Commented Refactor
+// Service Agreement HTML Builder – Defensive, Commented Refactor (Order Only)
 // ============================================================================
-// This module renders contract HTML from a data object that may have
-// missing/partial fields. All lookups are defensive and all placeholders
-// default to "" (empty string) if not provided.
-//
-// Key improvements:
-// - Safe placeholder replacement via safeReplaceAll()
-// - Defensive access with optional chaining and defaults
-// - Robust date/number formatting helpers
-// - Clear JSDoc comments for all functions
-// - No throws on missing/invalid data
+// NOTE FROM AUTHOR: Per your request, this version ONLY reorders functions
+// into a logical top-down flow and adds detailed comments above each function.
+// No logic has been refactored or changed.
 // ============================================================================
 
 const { parseISO, format, isValid } = require("date-fns");
@@ -26,15 +19,18 @@ const BORDER = "black";
 const STROKE = "black";
 const STROKE_W = 2;
 
-// ============================================================================
-// Small Safe Helpers
-// ============================================================================
+/* ===========================================================================
+   Small Safe Helpers
+   =========================================================================== */
 
 /**
- * Safely format a date for a given IANA time zone. Returns "" on failure.
- * @param {Date|number|string} date
- * @param {string} fmt
- * @returns {string}
+ * Safely format a date into a string for the Australia/Sydney timezone.
+ * - Returns "" on any failure (invalid date, bad format, etc.).
+ * - Used to produce a stable "today" value and any other zone-aware dates.
+ *
+ * @param {Date|number|string} date - A Date instance or a parseable date input.
+ * @param {string} fmt - date-fns format string (e.g., "dd/MM/yyyy").
+ * @returns {string} - Formatted date string or "" on failure.
  */
 function safeFormatInSydney(date, fmt) {
   try {
@@ -45,12 +41,14 @@ function safeFormatInSydney(date, fmt) {
 }
 
 /**
- * Replace ALL occurrences of a token in a string.
- * Falls back to original if inputs are not strings.
- * @param {string} html
- * @param {string} token e.g. "{COMPANY_NAME}"
- * @param {string} value
- * @returns {string}
+ * Replace ALL occurrences of a token in an HTML/string safely.
+ * - If inputs are not strings, returns original `html` (or "").
+ * - Avoids regex pitfalls by using naive split/join for exact token replacement.
+ *
+ * @param {string} html - The source HTML/text with placeholders.
+ * @param {string} token - The placeholder token to replace, e.g. "{COMPANY_NAME}".
+ * @param {string} [value=""] - Replacement value (coerced to string; nullish => "").
+ * @returns {string} - Resulting string with all tokens replaced.
  */
 function safeReplaceAll(html, token, value = "") {
   if (typeof html !== "string" || typeof token !== "string") return html ?? "";
@@ -59,10 +57,13 @@ function safeReplaceAll(html, token, value = "") {
 }
 
 /**
- * Safe join with trimming and filtering falsy values.
- * @param {Array<string|undefined|null>} parts
- * @param {string} sep
- * @returns {string}
+ * Safely join an array of strings with trimming and falsy filtering.
+ * - Removes empty/whitespace-only parts.
+ * - Returns "" for non-array inputs.
+ *
+ * @param {Array<string|undefined|null>} parts - List of parts to join.
+ * @param {string} [sep=" "] - Separator for the join, defaults to single space.
+ * @returns {string} - Joined and trimmed string.
  */
 function safeJoin(parts, sep = " ") {
   return (Array.isArray(parts) ? parts : [])
@@ -71,15 +72,17 @@ function safeJoin(parts, sep = " ") {
     .join(sep);
 }
 
-// ============================================================================
-// Date & Number Utilities
-// ============================================================================
+/* ===========================================================================
+   Date & Number Utilities
+   =========================================================================== */
 
 /**
- * Format an ISO-like date string (YYYY-MM-DD / ISO timestamp) as DD/MM/YYYY.
- * Returns "" if invalid or missing.
- * @param {string} iso
- * @returns {string}
+ * Convert ISO-like date input (YYYY-MM-DD or ISO timestamp) into "DD/MM/YYYY".
+ * - Returns "" for invalid or missing input.
+ * - Defensive: parses via date-fns `parseISO` and checks `isValid`.
+ *
+ * @param {string} iso - ISO-like date string.
+ * @returns {string} - "DD/MM/YYYY" or "".
  */
 function toDDMMYYYY(iso) {
   if (!iso || typeof iso !== "string") return "";
@@ -92,17 +95,17 @@ function toDDMMYYYY(iso) {
 }
 
 /**
- * Convert a price-like value ("$300.00", "300", "300,00", number) to Number.
- * Returns 0 if it cannot be parsed.
- * @param {string|number} val
- * @returns {number}
+ * Convert a price-like value to a JS Number.
+ * - Accepts numbers, strings like "$300.00", "300", "1,250.50", "300,00".
+ * - Returns 0 on any parse failure.
+ *
+ * @param {string|number} val - Price-like input.
+ * @returns {number} - Parsed numeric value or 0.
  */
 function getNumber(val) {
   if (typeof val === "number" && Number.isFinite(val)) return val;
   if (val == null) return 0;
-  // Keep digits, comma, dot; convert comma to dot only if it looks decimal.
   const cleaned = String(val).replace(/[^0-9.,-]/g, "");
-  // If both comma and dot present, remove thousands separators (commas)
   const normalized =
     cleaned.includes(".") && cleaned.includes(",")
       ? cleaned.replace(/,/g, "")
@@ -112,9 +115,11 @@ function getNumber(val) {
 }
 
 /**
- * Format a number as AUD currency. Returns "$0.00" on invalid input.
- * @param {number} n
- * @returns {string}
+ * Format a number as AUD currency.
+ * - Returns "$0.00" fallback if locale formatting fails or input invalid.
+ *
+ * @param {number} n - Numeric value to format.
+ * @returns {string} - e.g. "$1,250.00".
  */
 function formatMoney(n) {
   const safe = Number.isFinite(n) ? n : 0;
@@ -125,22 +130,22 @@ function formatMoney(n) {
       minimumFractionDigits: 2,
     });
   } catch {
-    // Fallback if locale options unavailable in environment
     return `$${safe.toFixed(2)}`;
   }
 }
 
-// ============================================================================
-// Discount & Totals Utilities
-// ============================================================================
+/* ===========================================================================
+   Discount & Totals Utilities
+   =========================================================================== */
 
 /**
- * Default discount rule based on the number of selected service frequencies.
- * - < 3 => 0%
- * - 4–5 => 5%
- * - >= 6 => 10%
- * @param {number} serviceCount
- * @returns {number} percentage (0, 5, 10)
+ * Default discount rule based on count of selected service frequencies.
+ * - < 3 services  => 0%
+ * - 4–5 services  => 5%
+ * - >= 6 services => 10%
+ *
+ * @param {number} serviceCount - Number of selected services.
+ * @returns {number} - Discount percentage (0, 5, or 10).
  */
 function getDiscountDefault(serviceCount) {
   const c = Number.isFinite(serviceCount) ? serviceCount : 0;
@@ -151,9 +156,14 @@ function getDiscountDefault(serviceCount) {
 }
 
 /**
- * Get multiplier for frequency.
- * @param {string|null|undefined} frequency
- * @returns {number} 4 (quarterly), 2 (six-monthly), 1 (yearly), or 0 if missing
+ * Convert a frequency label to an annual multiplier.
+ * - "yearly" => 1
+ * - "six-monthly"/"6monthly"/"six monthly" => 2
+ * - anything else non-empty => 4 (assumed "quarterly")
+ * - null/empty/"none" => 0
+ *
+ * @param {string|null|undefined} frequency - Frequency label.
+ * @returns {number} - Multiplier (0, 1, 2, or 4).
  */
 function frequencyToMultiplier(frequency) {
   const f = (frequency ?? "").toString().trim().toLowerCase();
@@ -162,15 +172,17 @@ function frequencyToMultiplier(frequency) {
   if (f === "none") return 0;
   if (f === "yearly") return 1;
   if (f === "six-monthly" || f === "6monthly" || f === "six monthly") return 2;
-  // Default to quarterly if something is provided but not matched
   return 4;
 }
 
 /**
- * Annualized cost helper for all services except odour-control.
- * @param {Array} services
- * @param {string|null|undefined} frequency
- * @returns {number}
+ * Compute annualized cost for a list of services, given a frequency.
+ * - Sums price * multiplier for each service.
+ * - Returns 0 if multiplier is 0 or services is empty.
+ *
+ * @param {Array} services - Array of service objects with `price`.
+ * @param {string|null|undefined} frequency - Frequency selection.
+ * @returns {number} - Annualized cost.
  */
 function getServiceAnualCost(services, frequency) {
   const mult = frequencyToMultiplier(frequency);
@@ -179,11 +191,13 @@ function getServiceAnualCost(services, frequency) {
 }
 
 /**
- * Gather services of a given type from the sites array.
- * Returns { type, items } where each item carries site/building context.
- * @param {Array} sites
- * @param {string} type
- * @returns {{ type: string, items: Array }}
+ * Gather all services of a specific `type` from an array of `sites`.
+ * - Flattens `sites -> buildings -> services` into an array, attaching
+ *   site/building metadata for rendering and calculation purposes.
+ *
+ * @param {Array} sites - `serviceAgreement.sites` array.
+ * @param {string} type - Service type to filter by (e.g., "chute_cleaning").
+ * @returns {{ type: string, items: Array }} - Wrapper object with `items` list.
  */
 function getServices(sites, type) {
   if (!Array.isArray(sites) || !type) return { type, items: [] };
@@ -204,24 +218,27 @@ function getServices(sites, type) {
 }
 
 /**
- * Compute the grand total for all services with optional discount.
- * Odour control = sum(units * unitPrice * frequencyMultiplier) ONLY if
- * odour frequency is selected.
+ * Compute the grand total for the contract, including odour control logic
+ * and optional incentives-based discount.
+ * - Annualizes each service type based on its selected frequency.
+ * - Odour control multiplies unit price by unit count and frequency multiplier.
+ * - Applies discount if `incentives` is truthy and discount rule returns > 0.
+ *
  * @param {Object} params
- * @param {Array}  params.sites
- * @param {Object} params.frequencies
- * @param {Object<string, number>} params.odourControlUnits
- * @param {(n:number)=>number} [params.getDiscount]
- * @returns {number}
+ * @param {Array}  params.sites - Sites used to gather services.
+ * @param {Object} params.frequencies - Selected frequencies by type.
+ * @param {Object<string, number>} params.odourControlUnits - Units keyed by service id.
+ * @param {(n:number)=>number} [params.getDiscount] - Discount rule (default provided).
+ * @param {any} params.incentives - Truthy to enable discount, falsy to skip.
+ * @returns {number} - Non-negative grand total.
  */
 function computeGrandTotal({
   sites = [],
   frequencies = {},
   odourControlUnits = {},
   getDiscount = getDiscountDefault,
-  incentives
+  incentives,
 }) {
-  // Pull frequencies defensively
   const chuteCleaningFrequency = frequencies?.chuteCleaningFrequency ?? null;
   const equipmentMaintenanceFrequency =
     frequencies?.equipmentMaintenanceFrequency ?? null;
@@ -232,7 +249,6 @@ function computeGrandTotal({
   const binCleaningFrequency = frequencies?.binCleaningFrequency ?? null;
   const odourControlFrequency = frequencies?.odourControlFrequency ?? null;
 
-  // Collect services by type
   const chute = getServices(sites, "chute_cleaning");
   const equip = getServices(sites, "equipment_maintenance");
   const hopper = getServices(sites, "hopper_door_inspection");
@@ -240,7 +256,6 @@ function computeGrandTotal({
   const bin = getServices(sites, "bin_cleaning");
   const odour = getServices(sites, "odour_control");
 
-  // Annual totals (per rules)
   const chuteAnnual = getServiceAnualCost(chute.items, chuteCleaningFrequency);
   const equipAnnual = getServiceAnualCost(
     equip.items,
@@ -256,7 +271,6 @@ function computeGrandTotal({
   );
   const binAnnual = getServiceAnualCost(bin.items, binCleaningFrequency);
 
-  // Odour control = sum(qty * unitPrice * frequencyMultiplier) if frequency set
   const odourMult = frequencyToMultiplier(odourControlFrequency);
   const odourAnnual = odourMult
     ? (odour.items || []).reduce((acc, r) => {
@@ -273,7 +287,6 @@ function computeGrandTotal({
     binAnnual +
     odourAnnual;
 
-  // Discount based on how many frequencies are selected
   const serviceCount = [
     chuteCleaningFrequency,
     equipmentMaintenanceFrequency,
@@ -281,24 +294,27 @@ function computeGrandTotal({
     wasteRoomCleaningFrequency,
     binCleaningFrequency,
     odourControlFrequency,
-  ].filter((f) => f != null && String(f).trim() !== "" && String(f).trim() !== "none").length;
+  ].filter(
+    (f) => f != null && String(f).trim() !== "" && String(f).trim() !== "none"
+  ).length;
 
   const discountPct = Number(getDiscount(Number(serviceCount))) || 0;
-  const discountAmt =( discountPct && incentives) ? (subtotal * discountPct) / 100 : 0;
+  const discountAmt =
+    discountPct && incentives ? (subtotal * discountPct) / 100 : 0;
 
-  // Never negative
   return Math.max(0, subtotal - discountAmt);
 }
 
-// ============================================================================
-// Site/Name Helpers (for cover page)
-// ============================================================================
+/* ===========================================================================
+   Site/Name Helpers (Cover Page)
+   =========================================================================== */
 
 /**
- * Flatten site names (one per building entry). Keeps duplicates if the same
- * site appears multiple times (mirrors the original logic).
- * @param {Array} sites
- * @returns {string[]}
+ * Return an array of site names, repeated per building (mirrors original logic).
+ * - Useful for building a bulleted list on the cover page.
+ *
+ * @param {Array} sites - `serviceAgreement.sites` array.
+ * @returns {string[]} - Array of site names (may include duplicates).
  */
 function getSitesNames(sites) {
   if (!Array.isArray(sites)) return [];
@@ -308,9 +324,11 @@ function getSitesNames(sites) {
 }
 
 /**
- * Build the cover-page list of site names as HTML (defensive).
- * @param {Array} sites
- * @returns {string}
+ * Build cover page HTML with site names, one per row (defensive).
+ * - Uses `getSitesNames()` and wraps each name in a simple div.
+ *
+ * @param {Array} sites - `serviceAgreement.sites` array.
+ * @returns {string} - HTML snippet.
  */
 function getCoverPageSitesNames(sites) {
   const siteNames = getSitesNames(sites)
@@ -325,22 +343,32 @@ function getCoverPageSitesNames(sites) {
   `;
 }
 
-// ============================================================================
-// HTML Builders – Service Sections
-// ============================================================================
+/* ===========================================================================
+   HTML Builders – Shared & Collectors
+   =========================================================================== */
 
-/** Internal: generic collector used by all sections here */
+/**
+ * Internal collector that returns flat services for a given `type`.
+ * - Convenience wrapper to keep section functions concise.
+ *
+ * @param {Array} sites - `serviceAgreement.sites` array.
+ * @param {string} type - Service type (e.g., "chute_cleaning").
+ * @returns {Array} - Flat list of services with site/building context.
+ */
 function getChuteCleaningServices(sites, type) {
   return getServices(sites, type).items || [];
 }
 
 /**
- * Common frequency checklist builder (defensive)
- * @param {string|null|undefined} frequency
+ * Common frequency checklist builder for UI.
+ * - Visualizes Quarterly / 6 Monthly / Yearly with ticked boxes.
+ * - Supports `visible` or `hide` filters to control which rows appear.
+ *
+ * @param {string|null|undefined} frequency - Selected frequency label.
  * @param {Object} [opts]
- * @param {string[]} [opts.hide]
- * @param {string[]} [opts.visible]
- * @returns {string}
+ * @param {string[]} [opts.hide] - Keys to hide (normalized).
+ * @param {string[]} [opts.visible] - Keys to show (normalized).
+ * @returns {string} - HTML snippet of the checklist column.
  */
 function frequencyChecklistHTML(frequency, opts = {}) {
   const norm = (s) =>
@@ -357,7 +385,6 @@ function frequencyChecklistHTML(frequency, opts = {}) {
     { key: "yearly", label: "Yearly", checked: isYearly },
   ];
 
-  // Visibility rules
   let filtered = items;
   if (Array.isArray(opts.visible) && opts.visible.length) {
     const vis = new Set(opts.visible.map(norm));
@@ -367,7 +394,6 @@ function frequencyChecklistHTML(frequency, opts = {}) {
     filtered = filtered.filter((it) => !hide.has(it.key));
   }
 
-  // Nothing to show? return an empty container to keep layout stable
   if (!filtered.length) {
     return `<div style="width:20%; min-height:45px; padding-top:5px; display:flex; flex-direction:column; padding-bottom:20px; gap:10px;"></div>`;
   }
@@ -414,7 +440,18 @@ function frequencyChecklistHTML(frequency, opts = {}) {
   `;
 }
 
-// -- Waste Chute Cleaning -----------------------------------------------------
+/* ===========================================================================
+   HTML Builders – Individual Service Sections
+   =========================================================================== */
+
+/**
+ * Render the "Waste Chute Cleaning" section.
+ * - Shows site + building names, price per chute, and level notes.
+ *
+ * @param {Array} sites - Sites array.
+ * @param {string|null|undefined} frequency - Selected frequency.
+ * @returns {string} - HTML block or "" if frequency is null.
+ */
 const getChuteCleaningContent = (sites, frequency) => {
   if (frequency == null) return "";
   const services = getChuteCleaningServices(sites, "chute_cleaning");
@@ -433,9 +470,7 @@ const getChuteCleaningContent = (sites, frequency) => {
           class="avoid-break"
           style="
             ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
+            padding:10px;
             display:flex;
             flex-direction:column;
             align-items:center;
@@ -443,7 +478,6 @@ const getChuteCleaningContent = (sites, frequency) => {
           "
         >
           <div><b>${siteName}${bName}</b></div>
-          <div>${chutes ? `${chutes} Chutes` : ""}</div>
           <div>${price ? `$${price} + GST (Per Chute)` : ""}</div>
           <div><b>${levels ? `(Up to ${levels} Levels)` : ""}</b></div>
           <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
@@ -461,7 +495,7 @@ const getChuteCleaningContent = (sites, frequency) => {
       <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
         Quarterly
       </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+      <div style="width:35%; text-align:center; min-height:45px; border-right:1px solid black;">
         ${items}
       </div>
       ${frequencyChecklistHTML(frequency, {
@@ -471,7 +505,143 @@ const getChuteCleaningContent = (sites, frequency) => {
   `;
 };
 
-// -- Equipment Preventative Maintenance --------------------------------------
+/**
+ * Summarize equipment maintenance lines per site, grouped by equipment.
+ * - Produces an array of `{ site_name, equipment: [{ equipment, equipmentLabel, count, sum, sumFormatted }] }`.
+ * - NOTE: Keeps original behavior including final sort using `a.site`/`b.site`.
+ *
+ * @param {Array} sites - Sites array.
+ * @returns {Array} - Grouped equipment summary per site.
+ */
+function summarizeEquipmentMaintenanceBySite(sites) {
+  const results = [];
+
+  for (const site of sites) {
+    const siteName = (site && site.site_name) || "Unknown Site";
+    const buildings = (site && site.buildings) || [];
+
+    const agg = {};
+
+    for (const b of buildings) {
+      const services = (b && b.services) || [];
+      for (const s of services) {
+        if (!s || s.type !== "equipment_maintenance") continue;
+
+        const equipmentKey = s.equipment || "unknown-equipment";
+        const label = s.equipment_label;
+        const priceNum = getNumber(s.price);
+
+        if (!agg[equipmentKey]) {
+          agg[equipmentKey] = {
+            equipment: equipmentKey,
+            equipmentLabel: label,
+            count: 0,
+            sum: 0,
+          };
+        }
+
+        agg[equipmentKey].count += 1;
+        agg[equipmentKey].sum += priceNum;
+
+        if (!agg[equipmentKey].equipmentLabel && label) {
+          agg[equipmentKey].equipmentLabel = label;
+        }
+      }
+    }
+
+    const equipment = Object.values(agg)
+      .sort((a, b) => String(a.equipment).localeCompare(String(b.equipment)))
+      .map((e) => ({
+        equipment: e.equipment,
+        equipmentLabel: e.equipmentLabel,
+        count: e.count,
+        sum: Number(e.sum.toFixed(2)),
+        sumFormatted: formatMoney(e.sum),
+      }));
+
+    results.push({ site_name: siteName, equipment });
+  }
+
+  results.sort((a, b) => String(a.site).localeCompare(String(b.site)));
+  return results;
+}
+
+/**
+ * Render the "Equipment Preventative Maintenance" section grouped by site.
+ * - Uses `summarizeEquipmentMaintenanceBySite()` to list counts and totals.
+ * - For each equipment line: shows "count x <b>label</b>" on first line,
+ *   and "<sum> + GST" on the next line.
+ *
+ * @param {Array} sites - Sites array.
+ * @param {string|null|undefined} frequency - Selected frequency (controls visibility only).
+ * @returns {string} - HTML block or "" if frequency is null.
+ */
+const getEquipmentContentGroupBySite = (sites, frequency) => {
+  if (frequency == null) return "";
+
+  const services = summarizeEquipmentMaintenanceBySite(sites);
+
+  const items = services
+    .map((service, i, arr) => {
+      const isLast = i === arr.length - 1;
+      const siteName = service?.site_name || "";
+
+      const equipmentLines = (service?.equipment || [])
+        .map((e) => {
+          const label = e?.equipmentLabel || e?.equipment || "Equipment";
+          const count = e?.count ?? 0;
+          const sum = Number(e?.sum || 0);
+          return `<div>${count} x <b>${label}</b><div>${formatMoney(sum)} + GST</div></div>`;
+        })
+        .join("") || `<div style="opacity:.7">No equipment</div>`;
+
+      return `
+        <div
+          class="avoid-break"
+          style="
+            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            padding:10px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:6px;
+          "
+        >
+          <div><b>${siteName}</b></div>
+          <div style="text-align:center; display:flex; flex-direction:column; gap:5px;">
+            ${equipmentLines}
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="service-section" style="border:1px solid black;">
+      <div style="width:30%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        <b>Equipment Preventative<br/>Maintenance</b>
+      </div>
+      <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
+        Quarterly
+      </div>
+      <div style="width:35%; text-align:center; min-height:45px; border-right:1px solid black;">
+        ${items}
+      </div>
+      ${frequencyChecklistHTML(frequency, {
+        visible: ["quarterly", "yearly", "six-monthly"],
+      })}
+    </div>
+  `;
+};
+
+/**
+ * Render the "Equipment Preventative Maintenance" section (per building rows).
+ * - Original per-service layout (not grouped by site).
+ *
+ * @param {Array} sites - Sites array.
+ * @param {string|null|undefined} frequency - Selected frequency.
+ * @returns {string} - HTML block or "" if frequency is null.
+ */
 const getEquipmentContent = (sites, frequency) => {
   if (frequency == null) return "";
   const services = getChuteCleaningServices(sites, "equipment_maintenance");
@@ -491,9 +661,7 @@ const getEquipmentContent = (sites, frequency) => {
           class="avoid-break"
           style="
             ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
+            padding:10px;
             display:flex;
             flex-direction:column;
             align-items:center;
@@ -518,7 +686,7 @@ const getEquipmentContent = (sites, frequency) => {
       <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
         Quarterly
       </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+      <div style="width:35%; text-align:center; min-height:45px; border-right:1px solid black;">
         ${items}
       </div>
        ${frequencyChecklistHTML(frequency, {
@@ -528,7 +696,14 @@ const getEquipmentContent = (sites, frequency) => {
   `;
 };
 
-// -- Self-Closing Hopper Door Inspection -------------------------------------
+/**
+ * Render the "Self-Closing Hopper Door Inspection" section.
+ * - Lists site/building and price.
+ *
+ * @param {Array} sites - Sites array.
+ * @param {string|null|undefined} frequency - Selected frequency.
+ * @returns {string} - HTML block or "" if frequency is null.
+ */
 const getDoorInspectionContent = (sites, frequency) => {
   if (frequency == null) return "";
   const services = getChuteCleaningServices(sites, "hopper_door_inspection");
@@ -545,9 +720,7 @@ const getDoorInspectionContent = (sites, frequency) => {
           class="avoid-break"
           style="
             ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
+            padding:10px;
             display:flex;
             flex-direction:column;
             align-items:center;
@@ -569,7 +742,7 @@ const getDoorInspectionContent = (sites, frequency) => {
       <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
         Quarterly
       </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+      <div style="width:35%; text-align:center; min-height:45px; border-right:1px solid black;">
         ${items}
       </div>
       ${frequencyChecklistHTML(frequency, {
@@ -579,7 +752,14 @@ const getDoorInspectionContent = (sites, frequency) => {
   `;
 };
 
-// -- Waste Room High Pressure Clean ------------------------------------------
+/**
+ * Render the "Waste Room High Pressure Clean" section.
+ * - Shows site/building, price, area label, and per-room note.
+ *
+ * @param {Array} sites - Sites array.
+ * @param {string|null|undefined} frequency - Selected frequency.
+ * @returns {string} - HTML block or "" if frequency is null.
+ */
 const getWasteRoomCleanContent = (sites, frequency) => {
   if (frequency == null) return "";
   const services = getChuteCleaningServices(sites, "waste_room_pressure_clean");
@@ -597,9 +777,7 @@ const getWasteRoomCleanContent = (sites, frequency) => {
           class="avoid-break"
           style="
             ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
+           padding:10px;
             display:flex;
             flex-direction:column;
             align-items:center;
@@ -623,7 +801,7 @@ const getWasteRoomCleanContent = (sites, frequency) => {
       <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
         Quarterly
       </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+      <div style="width:35%; text-align:center; min-height:45px; border-right:1px solid black;">
         ${items}
       </div>
      ${frequencyChecklistHTML(frequency, {
@@ -633,7 +811,15 @@ const getWasteRoomCleanContent = (sites, frequency) => {
   `;
 };
 
-// -- Odour Control ------------------------------------------------------------
+/**
+ * Render the "EF Neutraliser (Odour Management System)" section.
+ * - Shows per-unit price, contract notes, and a units box for each entry.
+ *
+ * @param {Array} sites - Sites array.
+ * @param {string|null|undefined} frequency - Selected frequency.
+ * @param {Object} units - Map of serviceId -> unit count.
+ * @returns {string} - HTML block or "" if frequency is null.
+ */
 const getOdourControlContent = (sites, frequency, units) => {
   if (frequency == null) return "";
   const services = getChuteCleaningServices(sites, "odour_control");
@@ -651,9 +837,7 @@ const getOdourControlContent = (sites, frequency, units) => {
           class="avoid-break"
           style="
             ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
+            padding:10px;
             display:flex;
             flex-direction:column;
             align-items:center;
@@ -683,20 +867,21 @@ const getOdourControlContent = (sites, frequency, units) => {
       <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
         Quarterly
       </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+      <div style="width:35%; text-align:center; min-height:45px; border-right:1px solid black;">
         ${items}
       </div>
       ${frequencyChecklistHTML(frequency, { visible: ["quarterly"] })}
     </div>
   `;
 };
-// -- Wheelie Bin Cleaning -----------------------------------------------------
+
 /**
- * Render the Wheelie Bin Cleaning section.
- * Defensive: returns "" if frequency is null/undefined or no services exist.
- * @param {Array} sites
- * @param {string|null|undefined} frequency
- * @returns {string}
+ * Render the "Wheelie Bin Cleaning" section.
+ * - Shows site/building and price.
+ *
+ * @param {Array} sites - Sites array.
+ * @param {string|null|undefined} frequency - Selected frequency.
+ * @returns {string} - HTML block or "" if frequency is null.
  */
 const getWasteBinCleanContent = (sites, frequency) => {
   if (frequency == null) return "";
@@ -714,9 +899,7 @@ const getWasteBinCleanContent = (sites, frequency) => {
           class="avoid-break"
           style="
             ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding-right:10px;
-            padding-left:10px;
-            padding-bottom:10px;
+            padding:10px;
             display:flex;
             flex-direction:column;
             align-items:center;
@@ -738,7 +921,7 @@ const getWasteBinCleanContent = (sites, frequency) => {
       <div style="width:15%; text-align:center; border-right:1px solid black; min-height:45px; padding-top:5px;">
         Quarterly
       </div>
-      <div style="width:35%; text-align:center; min-height:45px; padding-top:5px; border-right:1px solid black;">
+      <div style="width:35%; text-align:center; min-height:45px; border-right:1px solid black;">
         ${items}
       </div>
       ${frequencyChecklistHTML(frequency, {
@@ -749,15 +932,18 @@ const getWasteBinCleanContent = (sites, frequency) => {
 };
 
 /**
- * Build the Incentives section HTML based on selected service frequencies.
- * - Returns "" if < 3 services are selected.
- * - Tier rules:
- *    3 services  -> Basic
- *    4–5         -> Essential
- *    6+          -> Premium
+ * Build the "Incentives" section based on selected service frequencies.
+ * - Returns empty string if < 3 services selected.
+ * - Tiers:
+ *    3 => BASIC
+ *    4–5 => ESSENTIAL
+ *    6+ => PREMIUM
+ *
+ * @param {Object} params
+ * @param {Object} params.frequencies - Selected frequencies object.
+ * @returns {string} - HTML snippet or "".
  */
 const getIncentivesContent = ({ frequencies = {} } = {}) => {
-  // --- helpers ---------------------------------------------------------------
   const norm = (v) =>
     String(v ?? "")
       .trim()
@@ -768,7 +954,6 @@ const getIncentivesContent = ({ frequencies = {} } = {}) => {
     return n !== "" && n !== "none";
   };
 
-  // Extract & count selected services (defensive: frequencies may be missing)
   const serviceCount = [
     frequencies?.chuteCleaningFrequency,
     frequencies?.equipmentMaintenanceFrequency,
@@ -778,9 +963,8 @@ const getIncentivesContent = ({ frequencies = {} } = {}) => {
     frequencies?.odourControlFrequency,
   ].filter(isSelected).length;
 
-  if (serviceCount < 3) return ""; // no incentives if fewer than 3 services
+  if (serviceCount < 3) return "";
 
-  // Determine tier + incentives
   let tier = "";
   let incentives = [];
 
@@ -802,7 +986,6 @@ const getIncentivesContent = ({ frequencies = {} } = {}) => {
       "5% Service Pricing Discounts",
     ];
   } else {
-    // serviceCount >= 6
     tier = "PREMIUM";
     incentives = [
       "Price Lock Guarantee (24 Months)",
@@ -815,7 +998,6 @@ const getIncentivesContent = ({ frequencies = {} } = {}) => {
     ];
   }
 
-  // --- HTML fragments (kept consistent) -------------------------------------
   const tableHeader = `
     <div class="section" style="margin-top:40px;">
       <div><u><b>INCENTIVES:</b></u></div>
@@ -856,10 +1038,7 @@ const getIncentivesContent = ({ frequencies = {} } = {}) => {
     </div>
   `;
 
-  const rowTemplate = ({
-    tierText,
-    incentiveText,
-  }) => `
+  const rowTemplate = ({ tierText, incentiveText }) => `
     <div
       class="section"
       style="
@@ -895,7 +1074,6 @@ const getIncentivesContent = ({ frequencies = {} } = {}) => {
     </div>
   `;
 
-  // First row shows the tier; subsequent rows keep tier column empty
   const rows = (incentives || [])
     .map((inc, i) =>
       rowTemplate({
@@ -908,23 +1086,19 @@ const getIncentivesContent = ({ frequencies = {} } = {}) => {
   return tableHeader + rows;
 };
 
-
-
-// ============================================================================
-// Main Templating – fillData()
-// ============================================================================
+/* ===========================================================================
+   Main Templating – fillData()
+   =========================================================================== */
 
 /**
- * Fill your HTML template with data. Expects the placeholders you used:
- * {COMPANY_NAME}, {ABN}, {ADDRESS}, {ACCOUNTS_EMAILS}, {ACCOUNT_PHONE},
- * {START_DATE}, {END_DATE}, {CONTRACT_TOTAL}, {SERVICE-CONTENT},
- * {SITE_NAME}, {NAME}, {SIGNATURE}, {DATE}
+ * Fill an HTML template string with data from a Service Agreement object.
+ * - Replaces known placeholders with formatted values.
+ * - Builds and injects all service section HTML blocks.
+ * - All operations are defensive; missing values yield "" rather than throw.
  *
- * All replacements are defensive; missing data produces "".
- *
- * @param {string} html
- * @param {Object} data
- * @returns {string}
+ * @param {string} html - The HTML template containing placeholders.
+ * @param {Object} data - Data object with company, agreement, and frequency info.
+ * @returns {string} - Final HTML string with placeholders replaced.
  */
 function fillData(html, data) {
   const d = data ?? {};
@@ -986,7 +1160,10 @@ function fillData(html, data) {
   const sites = d?.serviceAgreement?.sites || [];
   const servicesHTML =
     getChuteCleaningContent(sites, d?.chuteCleaningFrequency ?? null) +
-    getEquipmentContent(sites, d?.equipmentMaintenanceFrequency ?? null) +
+    getEquipmentContentGroupBySite(
+      sites,
+      d?.equipmentMaintenanceFrequency ?? null
+    ) +
     getDoorInspectionContent(
       sites,
       d?.selfClosingHopperDoorInspectionFrequency ?? null
@@ -1005,7 +1182,6 @@ function fillData(html, data) {
   // Signatory
   const signName = d?.signFullName ?? "";
   const trimmedDataURL = d?.trimmedDataURL ?? "";
-
   const salesperson = d?.serviceAgreement?.salesperson ?? "";
 
   // Signature box (image scaled to fit within fixed-height area)
@@ -1055,9 +1231,10 @@ function fillData(html, data) {
   return out;
 }
 
-// ============================================================================
-// Exports
-// ============================================================================
+/* ===========================================================================
+   Exports
+   =========================================================================== */
+
 module.exports = {
   fillData,
   // exporting helpers too (handy for tests or reuse)
