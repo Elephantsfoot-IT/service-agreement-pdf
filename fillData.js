@@ -608,7 +608,7 @@ const getEquipmentContentGroupBySite = (sites, frequency) => {
           "
         >
           <div><b>${siteName}</b></div>
-          <div style="text-align:center; display:flex; flex-direction:column; gap:5px;">
+          <div style="text-align:center; display:flex; flex-direction:column; gap:6px;">
             ${equipmentLines}
           </div>
         </div>
