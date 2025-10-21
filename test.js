@@ -73,6 +73,8 @@ const tinyPng =
             id: "539f7a55-b9a6-4a1a-b669-dc10bf2fbe5f",
             type: "hopper_door_inspection",
             price: "300.00",
+            chutes: "2",
+            levels: "30",
           }, {
             id: "9b3391c2-a889-4014-b594-b358696b5ca4",
             area: "21-40",
@@ -135,6 +137,8 @@ const tinyPng =
             id: "fd0f15b7-204f-4e85-8139-ab1a2aa424c3",
             type: "hopper_door_inspection",
             price: "300.00",
+            chutes: "2",
+            levels: "30",
           }, {
             id: "08e0546d-b3ce-4015-bc93-4ebda2e9f63e",
             area: "21-40",
@@ -197,6 +201,8 @@ const tinyPng =
             id: "fe817111-a97f-4030-972a-1c63d8529825",
             type: "hopper_door_inspection",
             price: "300.00",
+            chutes: "2",
+            levels: "30",
           }, {
             id: "f9eb19e7-fb9d-48a2-adc6-694581af27ed",
             area: "21-40",

@@ -719,29 +719,33 @@ const getDoorInspectionContent = (sites, frequency) => {
   if (!services.length) return "";
 
   const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      const price = getNumber(service?.price);
-      const siteName = service?.site_name ?? "";
-      const bName = service?.building_name ? ` - ${service.building_name}` : "";
-      return `
-        <div
-          class="avoid-break"
-          style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-            padding:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
-          "
-        >
-          <div><b>${siteName}${bName}</b></div>
-          <div>${price ? `$${price} + GST` : ""}</div>
-        </div>
-      `;
-    })
-    .join("");
+  .map((service, i, arr) => {
+    const isLast = i === arr.length - 1;
+    const price = getNumber(service?.price);
+    const chutes = service?.chutes ?? "";
+    const levels = service?.levels ?? "";
+    const siteName = service?.site_name ?? "";
+    const bName = service?.building_name ? ` - ${service.building_name}` : "";
+    return `
+      <div
+        class="avoid-break"
+        style="
+          ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+          padding:10px;
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          gap:10px;
+        "
+      >
+        <div><b>${siteName}${bName}</b></div>
+        <div>${price ? `$${price} + GST (Per Chute)` : ""}</div>
+        <div><b>${levels ? `(Up to ${levels} Levels)` : ""}</b></div>
+        <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
+      </div>
+    `;
+  })
+  .join("");
 
   return `
     <div class="service-section" style="border:1px solid black;">
