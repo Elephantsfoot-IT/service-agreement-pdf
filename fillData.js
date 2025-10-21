@@ -190,6 +190,12 @@ function getServiceAnualCost(services, frequency) {
   return services.reduce((acc, s) => acc + getNumber(s?.price) * mult, 0);
 }
 
+function getServiceAnualChuteCost(services, frequency) {
+  const mult = frequencyToMultiplier(frequency);
+  if (!mult || !Array.isArray(services) || services.length === 0) return 0;
+  return services.reduce((acc, s) => acc + getNumber(s?.price) * mult * getNumber(s?.chutes), 0);
+}
+
 /**
  * Gather all services of a specific `type` from an array of `sites`.
  * - Flattens `sites -> buildings -> services` into an array, attaching
@@ -256,12 +262,12 @@ function computeGrandTotal({
   const bin = getServices(sites, "bin_cleaning");
   const odour = getServices(sites, "odour_control");
 
-  const chuteAnnual = getServiceAnualCost(chute.items, chuteCleaningFrequency);
+  const chuteAnnual = getServiceAnualChuteCost(chute.items, chuteCleaningFrequency);
   const equipAnnual = getServiceAnualCost(
     equip.items,
     equipmentMaintenanceFrequency
   );
-  const hopperAnnual = getServiceAnualCost(
+  const hopperAnnual = getServiceAnualChuteCost(
     hopper.items,
     selfClosingHopperDoorInspectionFrequency
   );
