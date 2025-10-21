@@ -516,11 +516,11 @@ const getChuteCleaningContent = (sites, frequency) => {
 function summarizeEquipmentMaintenanceBySite(sites) {
   const results = [];
 
-  for (const site of sites) {
+  for (const site of sites ?? []) {
     const siteName = (site && site.site_name) || "Unknown Site";
     const buildings = (site && site.buildings) || [];
 
-    const agg = {};
+    const agg = Object.create(null);
 
     for (const b of buildings) {
       const services = (b && b.services) || [];
@@ -529,42 +529,51 @@ function summarizeEquipmentMaintenanceBySite(sites) {
 
         const equipmentKey = s.equipment || "unknown-equipment";
         const label = s.equipment_label;
-        const priceNum = getNumber(s.price);
+        const priceNumRaw = getNumber(s.price);
+        const priceNum = Number.isFinite(priceNumRaw) ? priceNumRaw : 0;
 
         if (!agg[equipmentKey]) {
           agg[equipmentKey] = {
             equipment: equipmentKey,
-            equipmentLabel: label,
+            equipmentLabel: label ?? null,
             count: 0,
-            sum: 0,
+            maxPrice: -Infinity,
           };
         }
 
-        agg[equipmentKey].count += 1;
-        agg[equipmentKey].sum += priceNum;
+        const entry = agg[equipmentKey];
+        entry.count += 1;
 
-        if (!agg[equipmentKey].equipmentLabel && label) {
-          agg[equipmentKey].equipmentLabel = label;
+        if (priceNum > entry.maxPrice) {
+          entry.maxPrice = priceNum;
+        }
+
+        if (!entry.equipmentLabel && label) {
+          entry.equipmentLabel = label;
         }
       }
     }
 
     const equipment = Object.values(agg)
-      .sort((a, b) => String(a.equipment).localeCompare(String(b.equipment)))
-      .map((e) => ({
-        equipment: e.equipment,
-        equipmentLabel: e.equipmentLabel,
-        count: e.count,
-        sum: Number(e.sum.toFixed(2)),
-        sumFormatted: formatMoney(e.sum),
-      }));
+      .map((e) => {
+        const maxPrice = Number.isFinite(e.maxPrice) ? e.maxPrice : 0;
+        return {
+          equipment: e.equipment,
+          equipmentLabel: e.equipmentLabel || null,
+          count: e.count,
+          maxPrice: Number(maxPrice.toFixed(2)),
+        };
+      })
+      .sort((a, b) => String(a.equipment).localeCompare(String(b.equipment)));
 
     results.push({ site_name: siteName, equipment });
   }
 
-  results.sort((a, b) => String(a.site).localeCompare(String(b.site)));
+  // fix: sort by site_name (was 'site')
+  results.sort((a, b) => String(a.site_name).localeCompare(String(b.site_name)));
   return results;
 }
+
 
 /**
  * Render the "Equipment Preventative Maintenance" section grouped by site.
@@ -590,8 +599,8 @@ const getEquipmentContentGroupBySite = (sites, frequency) => {
         .map((e) => {
           const label = e?.equipmentLabel || e?.equipment || "Equipment";
           const count = e?.count ?? 0;
-          const sum = Number(e?.sum || 0);
-          return `<div>${count} x <b>${label}</b><div>${formatMoney(sum)} + GST</div></div>`;
+          const maxPrice = Number(e?.maxPrice || 0);
+          return `<div>${count} x <b>${label}</b><div>${formatMoney(maxPrice)} + GST</div></div>`;
         })
         .join("") || `<div style="opacity:.7">No equipment</div>`;
 
