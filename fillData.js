@@ -196,6 +196,12 @@ function getServiceAnualChuteCost(services, frequency) {
   return services.reduce((acc, s) => acc + getNumber(s?.price) * mult * getNumber(s?.chutes), 0);
 }
 
+function getServiceAnualEquipmentCost(services, frequency) {
+  const mult = frequencyToMultiplier(frequency);
+  if (!mult || !Array.isArray(services) || services.length === 0) return 0;
+  return services.reduce((acc, s) => acc + getNumber(s?.price) * mult * getNumber(s?.quantity), 0);
+}
+
 /**
  * Gather all services of a specific `type` from an array of `sites`.
  * - Flattens `sites -> buildings -> services` into an array, attaching
@@ -263,7 +269,7 @@ function computeGrandTotal({
   const odour = getServices(sites, "odour_control");
 
   const chuteAnnual = getServiceAnualChuteCost(chute.items, chuteCleaningFrequency);
-  const equipAnnual = getServiceAnualCost(
+  const equipAnnual = getServiceAnualEquipmentCost(
     equip.items,
     equipmentMaintenanceFrequency
   );
@@ -519,64 +525,56 @@ const getChuteCleaningContent = (sites, frequency) => {
  * @param {Array} sites - Sites array.
  * @returns {Array} - Grouped equipment summary per site.
  */
-function summarizeEquipmentMaintenanceBySite(sites) {
+function summarizeEquipmentMaintenanceByBuilding(sites) {
   const results = [];
 
   for (const site of sites ?? []) {
-    const siteName = (site && site.site_name) || "Unknown Site";
-    const buildings = (site && site.buildings) || [];
-
-    const agg = Object.create(null);
+    const siteName = (site?.site_name || "Unknown Site").trim();
+    const buildings = site?.buildings ?? [];
 
     for (const b of buildings) {
-      const services = (b && b.services) || [];
+      const rawBName = (b?.name ?? "").trim();
+      const buildingDisplay = rawBName ? `${siteName} - ${rawBName}` : siteName;
+
+      const agg = Object.create(null);
+      const services = b?.services ?? [];
+
       for (const s of services) {
         if (!s || s.type !== "equipment_maintenance") continue;
 
         const equipmentKey = s.equipment || "unknown-equipment";
-        const label = s.equipment_label;
+        const label = s.equipment_label ?? null;
         const priceNumRaw = getNumber(s.price);
         const priceNum = Number.isFinite(priceNumRaw) ? priceNumRaw : 0;
 
         if (!agg[equipmentKey]) {
           agg[equipmentKey] = {
             equipment: equipmentKey,
-            equipmentLabel: label ?? null,
+            equipmentLabel: label,
             count: 0,
             maxPrice: -Infinity,
           };
         }
-
         const entry = agg[equipmentKey];
-        entry.count += 1;
-
-        if (priceNum > entry.maxPrice) {
-          entry.maxPrice = priceNum;
-        }
-
-        if (!entry.equipmentLabel && label) {
-          entry.equipmentLabel = label;
-        }
+        entry.count += Number(s.quantity ?? 0);
+        if (priceNum > entry.maxPrice) entry.maxPrice = priceNum;
+        if (!entry.equipmentLabel && label) entry.equipmentLabel = label;
       }
-    }
 
-    const equipment = Object.values(agg)
-      .map((e) => {
-        const maxPrice = Number.isFinite(e.maxPrice) ? e.maxPrice : 0;
-        return {
+      const equipment = Object.values(agg)
+        .map(e => ({
           equipment: e.equipment,
           equipmentLabel: e.equipmentLabel || null,
           count: e.count,
-          maxPrice: Number(maxPrice.toFixed(2)),
-        };
-      })
-      .sort((a, b) => String(a.equipment).localeCompare(String(b.equipment)));
+          maxPrice: Number((Number.isFinite(e.maxPrice) ? e.maxPrice : 0).toFixed(2)),
+        }))
+        .sort((a, b) => String(a.equipment).localeCompare(String(b.equipment)));
 
-    results.push({ site_name: siteName, equipment });
+      results.push({ building_name: buildingDisplay, equipment });
+    }
   }
 
-  // fix: sort by site_name (was 'site')
-  results.sort((a, b) => String(a.site_name).localeCompare(String(b.site_name)));
+  results.sort((a, b) => String(a.building_name).localeCompare(String(b.building_name)));
   return results;
 }
 
@@ -594,21 +592,21 @@ function summarizeEquipmentMaintenanceBySite(sites) {
 const getEquipmentContentGroupBySite = (sites, frequency) => {
   if (frequency == null) return "";
 
-  const services = summarizeEquipmentMaintenanceBySite(sites);
+  const services = summarizeEquipmentMaintenanceByBuilding(sites);
 
   const items = services
     .map((service, i, arr) => {
       const isLast = i === arr.length - 1;
-      const siteName = service?.site_name || "";
+      const buildingName = service?.building_name || "";
 
       const equipmentLines = (service?.equipment || [])
         .map((e) => {
           const label = e?.equipmentLabel || e?.equipment || "Equipment";
           const count = e?.count ?? 0;
           const maxPrice = Number(e?.maxPrice || 0);
-          return `<div>${count} x <b>${label}</b><div>${formatMoney(maxPrice)} + GST</div></div>`;
+          return `<div>${count} x <b>${label}</b><div>${formatMoney(maxPrice)} + GST (Per System)</div></div>`;
         })
-        .join("") || `<div style="opacity:.7">No equipment</div>`;
+        .join("") || ``;
 
       return `
         <div
@@ -622,7 +620,7 @@ const getEquipmentContentGroupBySite = (sites, frequency) => {
             gap:6px;
           "
         >
-          <div><b>${siteName}</b></div>
+          <div><b>${buildingName}</b></div>
           <div style="text-align:center; display:flex; flex-direction:column; gap:6px;">
             ${equipmentLines}
           </div>
