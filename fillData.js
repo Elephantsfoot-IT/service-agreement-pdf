@@ -936,7 +936,8 @@ function fillData(html, data) {
               style="display:block; max-height:100%; max-width:100%; height:auto; width:auto; object-fit:contain;" />
        </div>`
     : `<div style="height:${IMAGE_ZONE_PX}px;"></div>`;
-  const today = TODAY_AU;
+  
+  const signatureDate = d.signatureDate
 
   let incentivesHTML = "";
   if (d?.serviceAgreement?.incentives) {
@@ -966,7 +967,7 @@ function fillData(html, data) {
   out = safeReplaceAll(out, "{SITE_NAME}", siteNamesHTML);
   out = safeReplaceAll(out, "{NAME}", signName);
   out = safeReplaceAll(out, "{SIGNATURE}", signatureHTML);
-  out = safeReplaceAll(out, "{DATE}", today);
+  out = safeReplaceAll(out, "{DATE}", signatureDate);
   out = safeReplaceAll(out, "{SALESPERSON}", salesperson);
   out = safeReplaceAll(out, "{INCENTIVES-CONTENT}", incentivesHTML);
 

@@ -14,6 +14,7 @@ const tinyPng =
 const dummydata = {
   page: 3,
   progress: 3,
+  signatureDate: "23/10/2025",
   signFullName: "Khang Trinh",
   signTitle: "CEO",
   conditionAgree: true,
