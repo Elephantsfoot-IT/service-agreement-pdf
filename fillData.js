@@ -617,7 +617,7 @@ const getBinCleaningContentGroupBySite = (sites, frequency) => {
             const label = e?.binSizeLabel || e?.binSize || "Bin Size";
             const count = e?.count ?? 0;
             const maxPrice = Number(e?.maxPrice || 0);
-            return `<div>${count} x <b>${label} bins</b><div>${formatMoney(maxPrice)} + GST (Per Bin)</div></div>`;
+            return `<div>${count} x <b>${label} ${count > 1 ? "bins" : "bin"}</b><div>${formatMoney(maxPrice)} + GST (Per Bin)</div></div>`;
           })
           .join("") || ``;
 
