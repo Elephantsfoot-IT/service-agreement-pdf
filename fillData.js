@@ -58,15 +58,32 @@ function getNumber(val) {
 
 function formatMoney(n) {
   const safe = Number.isFinite(n) ? n : 0;
+  // If whole number, don't show decimals; if decimal, show 2 places
+  const isWholeNumber = safe % 1 === 0;
+  
   try {
     return safe.toLocaleString("en-AU", {
       style: "currency",
       currency: "AUD",
-      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      minimumFractionDigits: isWholeNumber ? 0 : 2,
     });
   } catch {
-    return `$${safe.toFixed(2)}`;
+    // If whole number, no decimals; otherwise 2 decimals
+    return isWholeNumber 
+      ? `$${safe.toString()}` 
+      : `$${safe.toFixed(2)}`;
   }
+}
+
+// Add a helper function to format price numbers without .00
+function formatPrice(n) {
+  const safe = Number.isFinite(n) ? n : 0;
+  // If whole number, no decimals; if decimal, show exactly 2 decimals
+  const isWholeNumber = safe % 1 === 0;
+  return isWholeNumber 
+    ? safe.toString() 
+    : safe.toFixed(2);
 }
 
 // ---- discounts & totals ----
@@ -321,7 +338,7 @@ const getChuteCleaningContent = (sites, frequency) => {
           "
         >
           <div><b>${siteName}${bName}</b></div>
-          <div>${price ? `$${price} + GST (Per Chute)` : ""}</div>
+          <div>${price ? `$${formatPrice(price)} + GST (Per Chute)` : ""}</div>
           <div><b>${levels ? `(Up to ${levels} Levels)` : ""}</b></div>
           <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
         </div>
@@ -383,7 +400,7 @@ function summarizeEquipmentMaintenanceByBuilding(sites) {
           equipmentLabel: e.equipmentLabel || null,
           count: e.count,
           maxPrice: Number(
-            (Number.isFinite(e.maxPrice) ? e.maxPrice : 0).toFixed(2)
+            (Number.isFinite(e.maxPrice) ? e.maxPrice : 0)
           ),
         }))
         .sort((a, b) => String(a.equipment).localeCompare(String(b.equipment)));
@@ -478,7 +495,7 @@ const getDoorInspectionContent = (sites, frequency) => {
         "
       >
         <div><b>${siteName}${bName}</b></div>
-        <div>${price ? `$${price} + GST (Per Chute)` : ""}</div>
+        <div>${price ? `$${formatPrice(price)} + GST (Per Chute)` : ""}</div>
         <div><b>${levels ? `(Up to ${levels} Levels)` : ""}</b></div>
         <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
       </div>
@@ -529,7 +546,7 @@ const getWasteRoomCleanContent = (sites, frequency) => {
           "
         >
           <div><b>${siteName}${bName}</b></div>
-          <div>${price ? `$${price} + GST` : ""}</div>
+          <div>${price ? `$${formatPrice(price)} + GST` : ""}</div>
           <div><b>${areaLabel}</b></div>
           <div><b>(Per Waste Room)</b></div>
         </div>
@@ -590,7 +607,7 @@ function summarizeBinCleaningByBuilding(sites) {
           binSizeLabel: e.binSizeLabel || null,
           count: e.count,
           maxPrice: Number(
-            (Number.isFinite(e.maxPrice) ? e.maxPrice : 0).toFixed(2)
+            (Number.isFinite(e.maxPrice) ? e.maxPrice : 0)
           ),
         }))
         .sort((a, b) => String(a.binSize).localeCompare(String(b.binSize)));
@@ -685,7 +702,7 @@ const getOdourControlContent = (sites, frequency, units) => {
           "
         >
           <div><b>${siteName}${bName}</b></div>
-          <div>${price ? `$${price} + GST` : ""}</div>
+          <div>${price ? `$${formatPrice(price)} + GST` : ""}</div>
           <div>(Per Unit, No Installation cost. Min 2 year contract)</div>
           <div><b>*240V 10AMP Outlet Must be Supplied in Waste Room</b></div>
           <div style="display:flex; flex-direction:row; align-items:center; gap:10px;">
@@ -889,6 +906,7 @@ function fillData(html, data) {
 
   const startDate = toDDMMYYYY(d?.serviceAgreement?.start_date ?? "");
   const endDate = toDDMMYYYY(d?.serviceAgreement?.end_date ?? "");
+  const proposalExpiryDate = toDDMMYYYY(d?.serviceAgreement?.expire_at ?? "");
 
   const grand = computeGrandTotal({
     sites: d?.serviceAgreement?.sites || [],
@@ -970,6 +988,7 @@ function fillData(html, data) {
   out = safeReplaceAll(out, "{DATE}", signatureDate);
   out = safeReplaceAll(out, "{SALESPERSON}", salesperson);
   out = safeReplaceAll(out, "{INCENTIVES-CONTENT}", incentivesHTML);
+  out = safeReplaceAll(out, "{PROPOSAL_EXPIRY_DATE}", proposalExpiryDate);
 
   return out;
 }
