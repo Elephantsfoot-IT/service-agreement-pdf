@@ -953,6 +953,184 @@ const getOdourControlContent = (sites, frequency, units) => {
   `;
 };
 
+// ---- unscheduled rates ----
+function getUnscheduledRatesContent(unscheduledRates) {
+  if (!unscheduledRates) return "";
+
+  const rates = {
+    normalWorkingHours: unscheduledRates?.normalWorkingHours,
+    afterHoursWeekday: unscheduledRates?.afterHoursWeekday,
+    afterHoursWeekend: unscheduledRates?.afterHoursWeekend,
+    wasteBlockage: unscheduledRates?.wasteBlockage,
+  };
+
+  const fmt = (price) => {
+    const num = parseFloat(price);
+    return Number.isFinite(num) ? num.toFixed(2) : String(price ?? "");
+  };
+
+  return `
+    <div class="section" style="border: 1px solid black; border-top: none">
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          border-right: 1px solid black;
+          height: 45px;
+          padding-top: 5px;
+        "
+      >
+        <b>
+          <div>Normal Working Hours</div>
+          <div style="margin-top: 10px">(8.30am – 4.30pm)</div>
+        </b>
+      </div>
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          border-right: 1px solid black;
+          height: 45px;
+          padding-top: 5px;
+        "
+      >
+        $${fmt(rates.normalWorkingHours?.callOutFee)} + GST
+      </div>
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          height: 45px;
+          padding-top: 5px;
+        "
+      >
+        $${fmt(rates.normalWorkingHours?.hourlyRate)} + GST
+      </div>
+    </div>
+    <div class="section" style="border: 1px solid black; border-top: none">
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          border-right: 1px solid black;
+          height: 60px;
+          padding-top: 5px;
+        "
+      >
+        <b>
+          <div>After Hours</div>
+          <div style="margin-top: 10px">
+            (Monday to Friday from 4:30pm and Saturday)
+          </div>
+        </b>
+      </div>
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          border-right: 1px solid black;
+          height: 60px;
+          padding-top: 5px;
+        "
+      >
+        <div>$${fmt(rates.afterHoursWeekday?.callOutFee)} + GST*</div>
+        <div style="margin-top: 10px">(3 hours including travel)</div>
+      </div>
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          height: 60px;
+          padding-top: 5px;
+        "
+      >
+        <div>$${fmt(rates.afterHoursWeekday?.hourlyRate)} + GST</div>
+        <div style="margin-top: 10px">(Any time thereafter)</div>
+      </div>
+    </div>
+    <div class="section" style="border: 1px solid black; border-top: none">
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          border-right: 1px solid black;
+          height: 50px;
+          padding-top: 5px;
+        "
+      >
+        <b>
+          <div>After Hours</div>
+          <div style="margin-top: 10px">(Sunday and Public Holidays)</div>
+        </b>
+      </div>
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          border-right: 1px solid black;
+          height: 50px;
+          padding-top: 5px;
+        "
+      >
+        $${fmt(rates.afterHoursWeekend?.callOutFee)} + GST*
+        <div style="margin-top: 10px">(3 hours including travel)</div>
+      </div>
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          height: 50px;
+          padding-top: 5px;
+        "
+      >
+        $${fmt(rates.afterHoursWeekend?.hourlyRate)} + GST
+        <div style="margin-top: 10px">(Any time thereafter)</div>
+      </div>
+    </div>
+    <div class="section" style="border: 1px solid black; border-top: none">
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          border-right: 1px solid black;
+          height: 60px;
+          padding-top: 5px;
+        "
+      >
+        <b>
+          <div>Waste Blockage</div>
+          <div style="margin-top: 10px">
+            (Normal Working Hours 8.30am – <br />4.30pm)
+          </div>
+        </b>
+      </div>
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          border-right: 1px solid black;
+          height: 60px;
+          padding-top: 5px;
+        "
+      >
+        $${fmt(rates.wasteBlockage?.callOutFee)} + GST*
+        <div style="margin-top: 10px">(3 hours including travel)</div>
+      </div>
+      <div
+        style="
+          width: 33.33%;
+          text-align: center;
+          height: 60px;
+          padding-top: 5px;
+        "
+      >
+        $${fmt(rates.wasteBlockage?.hourlyRate)} + GST*
+        <div style="margin-top: 10px">(Any time thereafter)</div>
+      </div>
+    </div>
+  `;
+}
+
 // ---- incentives ----
 const getIncentivesContent = ({ frequencies = {} } = {}) => {
   const norm = (v) => String(v ?? "").trim().toLowerCase();
@@ -1193,6 +1371,8 @@ function fillData(html, data) {
     });
   }
 
+  const unscheduledRatesHTML = getUnscheduledRatesContent(d?.unscheduledRates);
+
   let out = String(html ?? "");
   out = safeReplaceAll(out, "{COMPANY_NAME}", companyName);
   out = safeReplaceAll(out, "{ABN}", abn);
@@ -1209,6 +1389,7 @@ function fillData(html, data) {
   out = safeReplaceAll(out, "{DATE}", signatureDate);
   out = safeReplaceAll(out, "{SALESPERSON}", salesperson);
   out = safeReplaceAll(out, "{INCENTIVES-CONTENT}", incentivesHTML);
+  out = safeReplaceAll(out, "{UNSCHEDULED-RATES-CONTENT}", unscheduledRatesHTML);
   out = safeReplaceAll(out, "{PROPOSAL_EXPIRY_DATE}", proposalExpiryDate);
 
   return out;
