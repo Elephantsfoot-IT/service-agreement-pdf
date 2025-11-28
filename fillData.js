@@ -225,14 +225,40 @@ function getSitesNames(sites) {
 }
 
 function getCoverPageSitesNames(sites) {
-  const siteNames = getSitesNames(sites)
-    .filter(Boolean)
-    .map((site) => `<div style="font-size:14px;">${site}</div>`)
+  if (!Array.isArray(sites)) return "";
+
+  const siteGroups = sites
+    .filter((site) => site?.site_name)
+    .map((site) => {
+      const siteName = site.site_name;
+      const buildings = (site?.buildings ?? [])
+        .map((b) => b?.name)
+        .filter(Boolean);
+      
+      const buildingsList = buildings.length > 0 
+        ? buildings.join(", ")
+        : "";
+
+      return {
+        siteName,
+        buildingsList,
+      };
+    })
+    .filter((group) => group.siteName);
+
+  const html = siteGroups
+    .map((group) => {
+      const siteDiv = `<div style="font-size:14px;"><b>${group.siteName}</b></div>`;
+      const buildingsDiv = group.buildingsList
+        ? `<div style="font-size:14px; padding-left:10px;">${group.buildingsList}</div>`
+        : "";
+      return siteDiv + buildingsDiv;
+    })
     .join("");
 
   return `
     <div style="display:flex; flex-direction:column; gap:5px;">
-      ${siteNames}
+      ${html}
     </div>
   `;
 }
@@ -318,31 +344,64 @@ const getChuteCleaningContent = (sites, frequency) => {
   const services = getChuteCleaningServices(sites, "chute_cleaning");
   if (!services.length) return "";
 
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      const price = getNumber(service?.price);
-      const levels = service?.levels ?? "";
-      const siteName = service?.site_name ?? "";
-      const bName = service?.building_name ? ` - ${service.building_name}` : "";
-      return `
+  // Group services by site
+  const groupedBySite = {};
+  for (const service of services) {
+    const siteName = service?.site_name ?? "";
+    if (!groupedBySite[siteName]) {
+      groupedBySite[siteName] = [];
+    }
+    groupedBySite[siteName].push(service);
+  }
+
+  const siteGroups = Object.entries(groupedBySite);
+  const items = siteGroups
+    .map(([siteName, siteServices], siteIdx) => {
+      const isLastSite = siteIdx === siteGroups.length - 1;
+      const siteHeader = `
         <div
           class="avoid-break"
           style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
             padding:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
+            padding-bottom:5px;
           "
         >
-          <div><b>${siteName}${bName}</b></div>
-          <div>${price ? `$${formatPrice(price)} + GST (Per Chute)` : ""}</div>
-          <div><b>${levels ? `(Up to ${levels} Levels)` : ""}</b></div>
-          <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
+          <div><b>${siteName}</b></div>
         </div>
       `;
+
+      const buildingItems = siteServices
+        .map((service, buildingIdx) => {
+          const isLastBuilding = buildingIdx === siteServices.length - 1;
+          const isLastItem = isLastSite && isLastBuilding;
+          const price = getNumber(service?.price);
+          const levels = service?.levels ?? "";
+          const bName = service?.building_name ?? "";
+          
+          return `
+            <div
+              class="avoid-break"
+              style="
+                ${isLastItem ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+                padding:10px;
+                padding-left:20px;
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                gap:10px;
+              "
+            >
+              <div><b>${bName}</b></div>
+              <div>${price ? `$${formatPrice(price)} + GST (Per Chute)` : ""}</div>
+              <div><b>${levels ? `(Up to ${levels} Levels)` : ""}</b></div>
+              <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
+            </div>
+          `;
+        })
+        .join("");
+
+      return siteHeader + buildingItems;
     })
     .join("");
 
@@ -372,7 +431,7 @@ function summarizeEquipmentMaintenanceByBuilding(sites) {
     const buildings = site?.buildings ?? [];
     for (const b of buildings) {
       const rawBName = (b?.name ?? "").trim();
-      const buildingDisplay = rawBName ? `${siteName} - ${rawBName}` : siteName;
+      const buildingName = rawBName || "";
       const agg = Object.create(null);
       const services = b?.services ?? [];
       for (const s of services) {
@@ -404,12 +463,11 @@ function summarizeEquipmentMaintenanceByBuilding(sites) {
           ),
         }))
         .sort((a, b) => String(a.equipment).localeCompare(String(b.equipment)));
-      results.push({ building_name: buildingDisplay, equipment });
+      if (equipment.length > 0) {
+        results.push({ site_name: siteName, building_name: buildingName, equipment });
+      }
     }
   }
-  results.sort((a, b) =>
-    String(a.building_name).localeCompare(String(b.building_name))
-  );
   return results;
 }
 
@@ -417,38 +475,71 @@ const getEquipmentContentGroupBySite = (sites, frequency) => {
   if (frequency == null) return "";
   const services = summarizeEquipmentMaintenanceByBuilding(sites);
 
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      const buildingName = service?.building_name || "";
-      const equipmentLines =
-        (service?.equipment || [])
-          .map((e) => {
-            const label = e?.equipmentLabel || e?.equipment || "Equipment";
-            const count = e?.count ?? 0;
-            const maxPrice = Number(e?.maxPrice || 0);
-            return `<div>${count} x <b>${label}</b><div>${formatMoney(maxPrice)} + GST (Per System)</div></div>`;
-          })
-          .join("") || ``;
+  // Group services by site
+  const groupedBySite = {};
+  for (const service of services) {
+    const siteName = service?.site_name ?? "";
+    if (!groupedBySite[siteName]) {
+      groupedBySite[siteName] = [];
+    }
+    groupedBySite[siteName].push(service);
+  }
 
-      return `
+  const siteGroups = Object.entries(groupedBySite);
+  const items = siteGroups
+    .map(([siteName, siteServices], siteIdx) => {
+      const isLastSite = siteIdx === siteGroups.length - 1;
+      const siteHeader = `
         <div
           class="avoid-break"
           style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
             padding:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:6px;
+            padding-bottom:5px;
           "
         >
-          <div><b>${buildingName}</b></div>
-          <div style="text-align:center; display:flex; flex-direction:column; gap:6px;">
-            ${equipmentLines}
-          </div>
+          <div><b>${siteName}</b></div>
         </div>
       `;
+
+      const buildingItems = siteServices
+        .map((service, buildingIdx) => {
+          const isLastBuilding = buildingIdx === siteServices.length - 1;
+          const isLastItem = isLastSite && isLastBuilding;
+          const buildingName = service?.building_name || "";
+          const equipmentLines =
+            (service?.equipment || [])
+              .map((e) => {
+                const label = e?.equipmentLabel || e?.equipment || "Equipment";
+                const count = e?.count ?? 0;
+                const maxPrice = Number(e?.maxPrice || 0);
+                return `<div>${count} x <b>${label}</b><div>${formatMoney(maxPrice)} + GST (Per System)</div></div>`;
+              })
+              .join("") || ``;
+
+          return `
+            <div
+              class="avoid-break"
+              style="
+                ${isLastItem ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+                padding:10px;
+                padding-left:20px;
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                gap:6px;
+              "
+            >
+              <div><b>${buildingName}</b></div>
+              <div style="text-align:center; display:flex; flex-direction:column; gap:6px;">
+                ${equipmentLines}
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      return siteHeader + buildingItems;
     })
     .join("");
 
@@ -475,31 +566,64 @@ const getDoorInspectionContent = (sites, frequency) => {
   const services = getChuteCleaningServices(sites, "hopper_door_inspection");
   if (!services.length) return "";
 
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      const price = getNumber(service?.price);
-      const levels = service?.levels ?? "";
-      const siteName = service?.site_name ?? "";
-      const bName = service?.building_name ? ` - ${service.building_name}` : "";
-      return `
-      <div
-        class="avoid-break"
-        style="
-          ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-          padding:10px;
-          display:flex;
-          flex-direction:column;
-          align-items:center;
-          gap:10px;
-        "
-      >
-        <div><b>${siteName}${bName}</b></div>
-        <div>${price ? `$${formatPrice(price)} + GST (Per Chute)` : ""}</div>
-        <div><b>${levels ? `(Up to ${levels} Levels)` : ""}</b></div>
-        <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
-      </div>
-    `;
+  // Group services by site
+  const groupedBySite = {};
+  for (const service of services) {
+    const siteName = service?.site_name ?? "";
+    if (!groupedBySite[siteName]) {
+      groupedBySite[siteName] = [];
+    }
+    groupedBySite[siteName].push(service);
+  }
+
+  const siteGroups = Object.entries(groupedBySite);
+  const items = siteGroups
+    .map(([siteName, siteServices], siteIdx) => {
+      const isLastSite = siteIdx === siteGroups.length - 1;
+      const siteHeader = `
+        <div
+          class="avoid-break"
+          style="
+            ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            padding:10px;
+            padding-bottom:5px;
+          "
+        >
+          <div><b>${siteName}</b></div>
+        </div>
+      `;
+
+      const buildingItems = siteServices
+        .map((service, buildingIdx) => {
+          const isLastBuilding = buildingIdx === siteServices.length - 1;
+          const isLastItem = isLastSite && isLastBuilding;
+          const price = getNumber(service?.price);
+          const levels = service?.levels ?? "";
+          const bName = service?.building_name ?? "";
+          
+          return `
+            <div
+              class="avoid-break"
+              style="
+                ${isLastItem ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+                padding:10px;
+                padding-left:20px;
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                gap:10px;
+              "
+            >
+              <div><b>${bName}</b></div>
+              <div>${price ? `$${formatPrice(price)} + GST (Per Chute)` : ""}</div>
+              <div><b>${levels ? `(Up to ${levels} Levels)` : ""}</b></div>
+              <div><b>*Any Extra Levels will be invoiced <br/> accordingly</b></div>
+            </div>
+          `;
+        })
+        .join("");
+
+      return siteHeader + buildingItems;
     })
     .join("");
 
@@ -526,31 +650,64 @@ const getWasteRoomCleanContent = (sites, frequency) => {
   const services = getChuteCleaningServices(sites, "waste_room_pressure_clean");
   if (!services.length) return "";
 
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      const price = getNumber(service?.price);
-      const areaLabel = service?.area_label ?? "";
-      const siteName = service?.site_name ?? "";
-      const bName = service?.building_name ? ` - ${service.building_name}` : "";
-      return `
+  // Group services by site
+  const groupedBySite = {};
+  for (const service of services) {
+    const siteName = service?.site_name ?? "";
+    if (!groupedBySite[siteName]) {
+      groupedBySite[siteName] = [];
+    }
+    groupedBySite[siteName].push(service);
+  }
+
+  const siteGroups = Object.entries(groupedBySite);
+  const items = siteGroups
+    .map(([siteName, siteServices], siteIdx) => {
+      const isLastSite = siteIdx === siteGroups.length - 1;
+      const siteHeader = `
         <div
           class="avoid-break"
           style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
-           padding:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
+            ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            padding:10px;
+            padding-bottom:5px;
           "
         >
-          <div><b>${siteName}${bName}</b></div>
-          <div>${price ? `$${formatPrice(price)} + GST` : ""}</div>
-          <div><b>${areaLabel}</b></div>
-          <div><b>(Per Waste Room)</b></div>
+          <div><b>${siteName}</b></div>
         </div>
       `;
+
+      const buildingItems = siteServices
+        .map((service, buildingIdx) => {
+          const isLastBuilding = buildingIdx === siteServices.length - 1;
+          const isLastItem = isLastSite && isLastBuilding;
+          const price = getNumber(service?.price);
+          const areaLabel = service?.area_label ?? "";
+          const bName = service?.building_name ?? "";
+          
+          return `
+            <div
+              class="avoid-break"
+              style="
+                ${isLastItem ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+                padding:10px;
+                padding-left:20px;
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                gap:10px;
+              "
+            >
+              <div><b>${bName}</b></div>
+              <div>${price ? `$${formatPrice(price)} + GST` : ""}</div>
+              <div><b>${areaLabel}</b></div>
+              <div><b>(Per Waste Room)</b></div>
+            </div>
+          `;
+        })
+        .join("");
+
+      return siteHeader + buildingItems;
     })
     .join("");
 
@@ -579,44 +736,32 @@ function summarizeBinCleaningByBuilding(sites) {
     const buildings = site?.buildings ?? [];
     for (const b of buildings) {
       const rawBName = (b?.name ?? "").trim();
-      const buildingDisplay = rawBName ? `${siteName} - ${rawBName}` : siteName;
-      const agg = Object.create(null);
+      const buildingName = rawBName || "";
       const services = b?.services ?? [];
+      
+      let totalQuantity = 0;
+      let totalPrice = 0;
+      
       for (const s of services) {
         if (!s || s.type !== "bin_cleaning") continue;
-        const binKey = s.bin_size || "unknown-bin-size";
-        const label = s.bin_size ?? null;
+        const quantity = Number(s.quantity ?? 0);
         const priceNumRaw = getNumber(s.price);
         const priceNum = Number.isFinite(priceNumRaw) ? priceNumRaw : 0;
-        if (!agg[binKey]) {
-          agg[binKey] = {
-            binSize: binKey,
-            binSizeLabel: label,
-            count: 0,
-            maxPrice: -Infinity,
-          };
-        }
-        const entry = agg[binKey];
-        entry.count += Number(s.quantity ?? 0);
-        if (priceNum > entry.maxPrice) entry.maxPrice = priceNum;
-        if (!entry.binSizeLabel && label) entry.binSizeLabel = label;
+        
+        totalQuantity += quantity;
+        totalPrice += priceNum * quantity;
       }
-      const bins = Object.values(agg)
-        .map((e) => ({
-          binSize: e.binSize,
-          binSizeLabel: e.binSizeLabel || null,
-          count: e.count,
-          maxPrice: Number(
-            (Number.isFinite(e.maxPrice) ? e.maxPrice : 0)
-          ),
-        }))
-        .sort((a, b) => String(a.binSize).localeCompare(String(b.binSize)));
-      results.push({ building_name: buildingDisplay, bins });
+      
+      if (totalQuantity > 0) {
+        results.push({ 
+          site_name: siteName,
+          building_name: buildingName, 
+          totalQuantity,
+          totalPrice: Number(totalPrice.toFixed(2))
+        });
+      }
     }
   }
-  results.sort((a, b) =>
-    String(a.building_name).localeCompare(String(b.building_name))
-  );
   return results;
 }
 
@@ -628,15 +773,8 @@ const getBinCleaningContentGroupBySite = (sites, frequency) => {
     .map((service, i, arr) => {
       const isLast = i === arr.length - 1;
       const buildingName = service?.building_name || "";
-      const binsLines =
-        (service?.bins || [])
-          .map((e) => {
-            const label = e?.binSizeLabel || e?.binSize || "Bin Size";
-            const count = e?.count ?? 0;
-            const maxPrice = Number(e?.maxPrice || 0);
-            return `<div>${count} x <b>${label} ${count > 1 ? "bins" : "bin"}</b><div>${formatMoney(maxPrice)} + GST (Per Bin)</div></div>`;
-          })
-          .join("") || ``;
+      const totalQuantity = service?.totalQuantity ?? 0;
+      const totalPrice = service?.totalPrice ?? 0;
 
       return `
         <div
@@ -652,7 +790,8 @@ const getBinCleaningContentGroupBySite = (sites, frequency) => {
         >
           <div><b>${buildingName}</b></div>
           <div style="text-align:center; display:flex; flex-direction:column; gap:6px;">
-            ${binsLines}
+            <div>${totalQuantity} x ${totalQuantity === 1 ? "bin" : "bins"}</div>
+            <div>${formatMoney(totalPrice)} + GST</div>
           </div>
         </div>
       `;
@@ -682,37 +821,70 @@ const getOdourControlContent = (sites, frequency, units) => {
   const services = getChuteCleaningServices(sites, "odour_control");
   if (!services.length) return "";
 
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      const price = getNumber(service?.price);
-      const siteName = service?.site_name ?? "";
-      const bName = service?.building_name ? ` - ${service.building_name}` : "";
-      const unit = getNumber(units?.[service?.id] ?? "");
-      return `
+  // Group services by site
+  const groupedBySite = {};
+  for (const service of services) {
+    const siteName = service?.site_name ?? "";
+    if (!groupedBySite[siteName]) {
+      groupedBySite[siteName] = [];
+    }
+    groupedBySite[siteName].push(service);
+  }
+
+  const siteGroups = Object.entries(groupedBySite);
+  const items = siteGroups
+    .map(([siteName, siteServices], siteIdx) => {
+      const isLastSite = siteIdx === siteGroups.length - 1;
+      const siteHeader = `
         <div
           class="avoid-break"
           style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
             padding:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:10px;
+            padding-bottom:5px;
           "
         >
-          <div><b>${siteName}${bName}</b></div>
-          <div>${price ? `$${formatPrice(price)} + GST` : ""}</div>
-          <div>(Per Unit, No Installation cost. Min 2 year contract)</div>
-          <div><b>*240V 10AMP Outlet Must be Supplied in Waste Room</b></div>
-          <div style="display:flex; flex-direction:row; align-items:center; gap:10px;">
-            <div style="width:55px; height:30px; border:1px solid black; display: flex; justify-content: center; align-items: center; font-weight: bold;">${
-              frequency == "none" ? "" : unit || ""
-            }</div>
-            <div>UNITS</div>
-          </div>
+          <div><b>${siteName}</b></div>
         </div>
       `;
+
+      const buildingItems = siteServices
+        .map((service, buildingIdx) => {
+          const isLastBuilding = buildingIdx === siteServices.length - 1;
+          const isLastItem = isLastSite && isLastBuilding;
+          const price = getNumber(service?.price);
+          const bName = service?.building_name ?? "";
+          const unit = getNumber(units?.[service?.id] ?? "");
+          
+          return `
+            <div
+              class="avoid-break"
+              style="
+                ${isLastItem ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+                padding:10px;
+                padding-left:20px;
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                gap:10px;
+              "
+            >
+              <div><b>${bName}</b></div>
+              <div>${price ? `$${formatPrice(price)} + GST` : ""}</div>
+              <div>(Per Unit, No Installation cost. Min 2 year contract)</div>
+              <div><b>*240V 10AMP Outlet Must be Supplied in Waste Room</b></div>
+              <div style="display:flex; flex-direction:row; align-items:center; gap:10px;">
+                <div style="width:55px; height:30px; border:1px solid black; display: flex; justify-content: center; align-items: center; font-weight: bold;">${
+                  frequency == "none" ? "" : unit || ""
+                }</div>
+                <div>UNITS</div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      return siteHeader + buildingItems;
     })
     .join("");
 
