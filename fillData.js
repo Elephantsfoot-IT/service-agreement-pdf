@@ -362,7 +362,9 @@ const getChuteCleaningContent = (sites, frequency) => {
         <div
           class="avoid-break"
           style="
-            ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+          ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            background-color: #f5c644;
+            color: #ffffff;
             padding:10px;
             padding-bottom:5px;
           "
@@ -493,7 +495,9 @@ const getEquipmentContentGroupBySite = (sites, frequency) => {
         <div
           class="avoid-break"
           style="
-            ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+           ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            background-color: #f5c644;
+            color: white;
             padding:10px;
             padding-bottom:5px;
           "
@@ -580,11 +584,15 @@ const getDoorInspectionContent = (sites, frequency) => {
   const items = siteGroups
     .map(([siteName, siteServices], siteIdx) => {
       const isLastSite = siteIdx === siteGroups.length - 1;
+      const isFirstSite = siteIdx === 0;
       const siteHeader = `
         <div
           class="avoid-break"
           style="
+            ${isFirstSite ? "border-top:1px solid black;" : ""}
             ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            background-color: #f5c644;
+            color: #ffffff;
             padding:10px;
             padding-bottom:5px;
           "
@@ -668,7 +676,9 @@ const getWasteRoomCleanContent = (sites, frequency) => {
         <div
           class="avoid-break"
           style="
-            ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+           ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            background-color: #f5c644;
+            color: #ffffff;
             padding:10px;
             padding-bottom:5px;
           "
@@ -769,32 +779,69 @@ const getBinCleaningContentGroupBySite = (sites, frequency) => {
   if (frequency == null) return "";
   const services = summarizeBinCleaningByBuilding(sites);
 
-  const items = services
-    .map((service, i, arr) => {
-      const isLast = i === arr.length - 1;
-      const buildingName = service?.building_name || "";
-      const totalQuantity = service?.totalQuantity ?? 0;
-      const totalPrice = service?.totalPrice ?? 0;
+  // Group services by site
+  const groupedBySite = {};
+  for (const service of services) {
+    const siteName = service?.site_name ?? "";
+    if (!groupedBySite[siteName]) {
+      groupedBySite[siteName] = [];
+    }
+    groupedBySite[siteName].push(service);
+  }
 
-      return `
+  const siteGroups = Object.entries(groupedBySite);
+  const items = siteGroups
+    .map(([siteName, siteServices], siteIdx) => {
+      const isLastSite = siteIdx === siteGroups.length - 1;
+      const isFirstSite = siteIdx === 0;
+      const siteHeader = `
         <div
           class="avoid-break"
           style="
-            ${isLast ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            ${isFirstSite ? "border-top:1px solid black;" : ""}
+            ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            background-color: #f5c644;
+            color: #ffffff;
             padding:10px;
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            gap:6px;
+            padding-bottom:5px;
           "
         >
-          <div><b>${buildingName}</b></div>
-          <div style="text-align:center; display:flex; flex-direction:column; gap:6px;">
-            <div>${totalQuantity} x ${totalQuantity === 1 ? "bin" : "bins"}</div>
-            <div>${formatMoney(totalPrice)} + GST</div>
-          </div>
+          <div><b>${siteName}</b></div>
         </div>
       `;
+
+      const buildingItems = siteServices
+        .map((service, buildingIdx) => {
+          const isLastBuilding = buildingIdx === siteServices.length - 1;
+          const isLastItem = isLastSite && isLastBuilding;
+          const buildingName = service?.building_name || "";
+          const totalQuantity = service?.totalQuantity ?? 0;
+          const totalPrice = service?.totalPrice ?? 0;
+
+          return `
+            <div
+              class="avoid-break"
+              style="
+                ${isLastItem ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+                padding:10px;
+                padding-left:20px;
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                gap:6px;
+              "
+            >
+              <div><b>${buildingName}</b></div>
+              <div style="text-align:center; display:flex; flex-direction:column; gap:6px;">
+                <div>${totalQuantity} x ${totalQuantity === 1 ? "bin" : "bins"}</div>
+                <div>${formatMoney(totalPrice)} + GST</div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      return siteHeader + buildingItems;
     })
     .join("");
 
@@ -840,6 +887,8 @@ const getOdourControlContent = (sites, frequency, units) => {
           class="avoid-break"
           style="
             ${isLastSite && siteServices.length === 0 ? "border-bottom:none;" : "border-bottom:1px solid black;"}
+            background-color: #f5c644;
+            color: #ffffff;
             padding:10px;
             padding-bottom:5px;
           "
